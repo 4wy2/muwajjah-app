@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   MapPin,
   Star,
@@ -46,6 +46,7 @@ export function FavoriteButton({
 }) {
   const { user } = useAuth();
   const nav = useNavigate();
+  const loc = useLocation();
   const q = useFavorites();
   const m = useToggleFavorite();
   const toast = useToast();
@@ -62,7 +63,7 @@ export function FavoriteButton({
       disabled={m.isPending || (!!user && q.isPending)}
       onClick={async () => {
         if (!user) {
-          nav("/auth/login?next=" + encodeURIComponent(location.pathname));
+          nav("/auth/login?next=" + encodeURIComponent(loc.pathname));
           return;
         }
         if (q.error) {

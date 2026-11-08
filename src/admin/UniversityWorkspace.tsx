@@ -9,6 +9,7 @@ import {
 } from "../api/admin";
 import { Loading, ErrorState, Empty, Confirm, useToast } from "../components/ui";
 import { friendly } from "../lib/utils";
+import { BASE } from "../lib/config";
 import ContentManager, { rowState } from "./ContentManager";
 import BundleImporter from "./BundleImporter";
 import type { ContentKind, Row } from "../lib/types";
@@ -79,7 +80,7 @@ export default function UniversityWorkspace() {
         </div>
         <div className="actions">
           {uni.published && !uni.deleted_at ? (
-            <a className="btn secondary compact" href={"/universities/" + id} target="_blank" rel="noreferrer">
+            <a className="btn secondary compact" href={BASE + "/universities/" + id} target="_blank" rel="noreferrer">
               <Eye size={16} /> كما يراها الطالب
             </a>
           ) : (

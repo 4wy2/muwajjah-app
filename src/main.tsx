@@ -8,6 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { BASE } from "./lib/config";
 import { queryClient } from "./api/client";
 import { AuthProvider } from "./auth/AuthProvider";
 import { ToastProvider, ErrorBoundary, Loading, Empty } from "./components/ui";
@@ -53,7 +54,7 @@ function LegacyDetail() {
 }
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={BASE || undefined}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ToastProvider>
@@ -101,7 +102,7 @@ function App() {
                       path="*"
                       element={
                         <Empty title="الصفحة غير موجودة">
-                          <a href="/">العودة للرئيسية</a>
+                          <a href={BASE + "/"}>العودة للرئيسية</a>
                         </Empty>
                       }
                     />

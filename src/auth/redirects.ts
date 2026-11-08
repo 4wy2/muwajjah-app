@@ -18,7 +18,7 @@ export function safeReturnTo(value: string | null, portal: Portal) {
       /[\\\u0000-\u0020]/.test(path)
     )
       return fallback;
-    if (/^\/(auth|admin\/(login|forgot|reset|callback))(\/|$)/.test(path))
+    if (/^\/(auth|admin\/(login|signup|forgot|reset|callback))(\/|$)/.test(path))
       return fallback;
     if (portal === "admin" && path !== "/admin" && !path.startsWith("/admin/"))
       return fallback;

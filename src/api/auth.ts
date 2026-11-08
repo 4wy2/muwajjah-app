@@ -1,3 +1,4 @@
+import { appUrl } from "../lib/config";
 import { db } from "./client";
 export async function signIn(email: string, password: string) {
   const { error } = await db.auth.signInWithPassword({ email, password });
@@ -12,7 +13,7 @@ export async function signUpStudent(
     email,
     password,
     options: {
-      emailRedirectTo: location.origin + "/auth/callback",
+      emailRedirectTo: appUrl("/auth/callback"),
       data: { guide_student_name: name, guide_account_kind: "student" },
     },
   });
@@ -29,7 +30,7 @@ export async function signUpContributor(
     email,
     password,
     options: {
-      emailRedirectTo: location.origin + "/admin/callback",
+      emailRedirectTo: appUrl("/admin/callback"),
       data: { guide_name: name, guide_signup: true },
     },
   });
@@ -37,7 +38,7 @@ export async function signUpContributor(
 }
 export async function sendRecovery(email: string, resetPath: string) {
   const { error } = await db.auth.resetPasswordForEmail(email, {
-    redirectTo: location.origin + resetPath,
+    redirectTo: appUrl(resetPath),
   });
   if (error) throw error;
 }
@@ -50,7 +51,7 @@ export async function changePassword(password: string) {
 export async function signInWithGoogle(callbackPath: string) {
   const { error } = await db.auth.signInWithOAuth({
     provider: "google",
-    options: { redirectTo: location.origin + callbackPath },
+    options: { redirectTo: appUrl(callbackPath) },
   });
   if (error) throw error;
 }
