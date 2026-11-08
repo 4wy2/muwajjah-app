@@ -1,0 +1,34 @@
+# Keeps the free Supabase project from being paused for inactivity
+# (Supabase pauses Free-plan projects with too little database activity
+# over 7 days). Every 3 days it reads one published university with the
+# PUBLIC anon key already shipped in the site — no secret is used and
+# nothing is written. If it fails, GitHub emails the repository owner.
+#
+# Note: GitHub may disable scheduled workflows in a repository with no
+# activity for a long time; re-enable from the Actions tab if that happens.
+name: Supabase keep-alive
+on:
+  schedule:
+    - cron: "17 6 */3 * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read published data
+        run: |
+          URL=$(grep -o 'https://[a-z0-9]*\.supabase\.co' src/lib/config.ts | head -1)
+          KEY=$(grep -o 'eyJ[A-Za-z0-9_.-]*' src/lib/config.ts | head -1)
+          for i in 1 2 3; do
+            code=$(curl -sS -o body.json -w '%{http_code}' \
+              "$URL/rest/v1/guide_universities?select=id&published=eq.true&limit=1" \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY") || code=000
+            echo "attempt $i: HTTP $code"
+            if [ "$code" = "200" ]; then cat body.json; exit 0; fi
+            sleep 30
+          done
+          echo "::error::Supabase did not answer. The project may be paused: open the Supabase dashboard and click Resume project."
+          exit 1
