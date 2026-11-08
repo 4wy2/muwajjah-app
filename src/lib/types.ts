@@ -95,6 +95,9 @@ export interface Score {
   achievement: number;
   result: number;
   created_at: string;
+  // Filled by the server trigger from the published track/university.
+  track_name?: string;
+  university_name?: string;
 }
 export interface Row {
   id: string;

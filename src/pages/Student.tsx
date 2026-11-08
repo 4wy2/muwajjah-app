@@ -7,6 +7,7 @@ import {
   Settings,
   Crown,
   ArrowLeft,
+  Trash2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
@@ -16,6 +17,7 @@ import {
   useScores,
   usePlus,
   useCommercialVisible,
+  deleteScore,
 } from "../api/student";
 import { useCatalog } from "../api/catalog";
 import { allRows, db, queryClient } from "../api/client";
@@ -222,6 +224,7 @@ export function Favorites() {
 }
 export function Scores() {
   const q = useScores();
+  const toast = useToast();
   const universities = useCatalog();
   return (
     <>
@@ -243,11 +246,15 @@ export function Scores() {
             <thead>
               <tr>
                 <th>الجامعة</th>
+                <th>المسار</th>
                 <th>الثانوية</th>
                 <th>القدرات</th>
                 <th>التحصيلي</th>
                 <th>الموزونة</th>
                 <th>التاريخ</th>
+                <th>
+                  <span className="sr-only">حذف</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -256,13 +263,16 @@ export function Scores() {
                   <td>
                     <Link
                       to={
-                        "/universities/" + s.university_id + "?tab=calculator"
+                        "/universities/" + s.university_id + "#admission"
                       }
                     >
                       {universities.data?.find((u) => u.id === s.university_id)
-                        ?.name || "عرض الجامعة"}
+                        ?.name ||
+                        s.university_name ||
+                        "عرض الجامعة"}
                     </Link>
                   </td>
+                  <td>{s.track_name}</td>
                   <td>{s.school}</td>
                   <td>{s.aptitude}</td>
                   <td>{s.achievement}</td>
@@ -270,6 +280,23 @@ export function Scores() {
                     <b>{s.result}%</b>
                   </td>
                   <td>{date(s.created_at)}</td>
+                  <td>
+                    <button
+                      className="icon-btn"
+                      aria-label="حذف هذه النتيجة"
+                      title="حذف"
+                      onClick={async () => {
+                        try {
+                          await deleteScore(s.id);
+                          toast("حُذفت النتيجة");
+                        } catch (e) {
+                          toast(friendly(e), true);
+                        }
+                      }}
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

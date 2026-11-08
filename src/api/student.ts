@@ -160,3 +160,19 @@ export function useCommercialVisible() {
   });
   return !!plus.data || !!states.data?.includes("locked");
 }
+
+// Requires database/004_student_score_delete.sql (delete policy). Without it
+// RLS silently matches no row, so report that instead of a false success.
+export async function deleteScore(id: string) {
+  const { data, error } = await db
+    .from("guide_student_scores")
+    .delete()
+    .eq("id", id)
+    .select("id, user_id");
+  if (error?.code === "42501" || (!error && !data?.length))
+    throw new Error("حذف النتائج غير مفعّل بعد. يحتاج تحديث القاعدة 004.");
+  if (error) throw error;
+  if (!data?.length)
+    throw new Error("حذف النتائج غير مفعّل بعد. يحتاج تحديث القاعدة 004.");
+  await queryClient.invalidateQueries({ queryKey: ["scores", data[0].user_id] });
+}

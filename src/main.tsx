@@ -24,6 +24,7 @@ import "@fontsource/tajawal/latin-400.css";
 import "./styles.css";
 const University = lazy(() => import("./pages/University"));
 const Compare = lazy(() => import("./pages/Compare"));
+const Privacy = lazy(() => import("./pages/Privacy"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Student = lazy(() => import("./pages/Student"));
 const Dashboard = lazy(() =>
@@ -67,6 +68,7 @@ function App() {
                     <Route index element={<Home />} />
                     <Route path="universities/:id" element={<University />} />
                     <Route path="compare" element={<Compare />} />
+                    <Route path="privacy" element={<Privacy />} />
                     <Route path="auth/:mode" element={<Auth />} />
                     <Route element={<RequireUser />}>
                       <Route path="student" element={<Student />}>
