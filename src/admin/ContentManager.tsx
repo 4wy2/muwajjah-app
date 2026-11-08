@@ -7,13 +7,21 @@ import {
   ArchiveRestore,
   Search,
   Download,
+  FolderOpen,
+  EyeOff,
+  Eye,
+  Rocket,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useMember } from "../auth/AuthProvider";
 import {
   useAdminRows,
   saveRecord,
   changeState,
+  describeState,
   invalidateContent,
+  publishUniversityWithContent,
+  describePublish,
 } from "../api/admin";
 import { specs, sanitize, fieldValueLabels, rowLabel } from "./specs";
 import {
@@ -29,10 +37,46 @@ import {
 } from "../components/ui";
 import { friendly, normalize, downloadJson } from "../lib/utils";
 import type { ContentKind, Row } from "../lib/types";
-export default function ContentManager({ kind }: { kind: ContentKind }) {
-  return <Manager key={kind} kind={kind} />;
+const EXCLUDABLE: ContentKind[] = ["programs", "tracks", "sections"];
+export function rowState(r: Row) {
+  if (r.deleted_at) return { key: "trash", label: "في السلة", cls: "trash" };
+  if (r.published) return { key: "published", label: "منشور", cls: "published" };
+  if (r.publication_excluded)
+    return { key: "excluded", label: "مخفي يدويًا", cls: "excluded" };
+  return { key: "draft", label: "مسودة", cls: "" };
 }
-function Manager({ kind }: { kind: ContentKind }) {
+const actionLabels: Record<string, string> = {
+  publish: "نشر",
+  draft: "إخفاء عن الطلاب",
+  unpublish: "إلغاء النشر",
+  include: "إعادة إدراج (يُنشر مع الجامعة لاحقًا)",
+  trash: "نقل للسلة",
+  restore: "استعادة",
+  publish_all: "نشر الجامعة ومحتواها",
+};
+export default function ContentManager({
+  kind,
+  universityLock,
+}: {
+  kind: ContentKind;
+  universityLock?: string;
+}) {
+  return (
+    <Manager
+      key={kind + (universityLock || "")}
+      kind={kind}
+      universityLock={universityLock}
+    />
+  );
+}
+function Manager({
+  kind,
+  universityLock,
+}: {
+  kind: ContentKind;
+  universityLock?: string;
+}) {
+  const excludable = EXCLUDABLE.includes(kind);
   const q = useAdminRows(kind);
   const universities = useAdminRows("universities");
   const member = useMember().data!;
@@ -40,7 +84,8 @@ function Manager({ kind }: { kind: ContentKind }) {
   const [search, setSearch] = useState("");
   const term = useDebounce(search);
   const [status, setStatus] = useState("active");
-  const [universityId, setUniversityId] = useState("");
+  const [universityFilter, setUniversityId] = useState("");
+  const universityId = universityLock || universityFilter;
   const [selected, setSelected] = useState<string[]>([]);
   const [editing, setEditing] = useState<Row | null | undefined>(undefined);
   const [action, setAction] = useState<{
@@ -59,12 +104,12 @@ function Manager({ kind }: { kind: ContentKind }) {
       (q.data || []).filter(
         (r) =>
           (status === "trash" ? !!r.deleted_at : !r.deleted_at) &&
-          (status === "published"
-            ? r.published
-            : status === "draft"
-              ? !r.published
-              : true) &&
-          (!universityId || r.university_id === universityId) &&
+          (status === "active" ||
+            status === "trash" ||
+            rowState(r).key === status) &&
+          (!universityId ||
+            (kind === "universities" ? r.id : r.university_id) ===
+              universityId) &&
           normalize(rowLabel(r)).includes(normalize(term)),
       ),
     [q.data, status, universityId, term],
@@ -77,8 +122,10 @@ function Manager({ kind }: { kind: ContentKind }) {
   return (
     <>
       <PageHeading
-        title={spec.label}
-        description="راجع المحتوى وحدّثه قبل نشره للطلاب."
+        title={universityLock ? "" : spec.label}
+        description={
+          universityLock ? "" : "راجع المحتوى وحدّثه قبل نشره للطلاب."
+        }
       >
         <div className="actions">
           <button
@@ -90,7 +137,8 @@ function Manager({ kind }: { kind: ContentKind }) {
           >
             <Download size={16} /> تصدير
           </button>
-          {edit && (kind !== "universities" || member.is_owner) && (
+          {edit &&
+          (kind !== "universities" || (member.is_owner && !universityLock)) ? (
             <button
               className="btn primary compact"
               onClick={() => {
@@ -100,7 +148,7 @@ function Manager({ kind }: { kind: ContentKind }) {
             >
               <Plus size={17} /> إضافة {spec.singular}
             </button>
-          )}
+          ) : null}
         </div>
       </PageHeading>
       <div className="panel">
@@ -128,9 +176,10 @@ function Manager({ kind }: { kind: ContentKind }) {
             <option value="active">كل السجلات</option>
             <option value="published">منشور</option>
             <option value="draft">مسودة</option>
+            {excludable && <option value="excluded">مخفي يدويًا</option>}
             <option value="trash">سلة المحذوفات</option>
           </select>
-          {kind !== "universities" && (
+          {kind !== "universities" && !universityLock && (
             <select
               aria-label="تصفية حسب الجامعة"
               value={universityId}
@@ -163,10 +212,24 @@ function Manager({ kind }: { kind: ContentKind }) {
                   نشر المحدد
                 </button>
                 <button
-                  onClick={() => setAction({ ids: selected, action: "draft" })}
+                  onClick={() =>
+                    setAction({
+                      ids: selected,
+                      action: excludable ? "draft" : "unpublish",
+                    })
+                  }
                 >
-                  تحويل لمسودة
+                  {excludable ? "إخفاء عن الطلاب" : "إلغاء النشر"}
                 </button>
+                {excludable && (
+                  <button
+                    onClick={() =>
+                      setAction({ ids: selected, action: "include" })
+                    }
+                  >
+                    إعادة إدراج
+                  </button>
+                )}
               </>
             )}
             {remove && (
@@ -220,7 +283,9 @@ function Manager({ kind }: { kind: ContentKind }) {
                       />
                     </th>
                     <th>الاسم</th>
-                    {kind !== "universities" && <th>الجامعة</th>}
+                    {kind !== "universities" && !universityLock && (
+                      <th>الجامعة</th>
+                    )}
                     <th>الحالة</th>
                     <th>الإجراءات</th>
                   </tr>
@@ -250,7 +315,7 @@ function Manager({ kind }: { kind: ContentKind }) {
                           </small>
                         )}
                       </td>
-                      {kind !== "universities" && (
+                      {kind !== "universities" && !universityLock && (
                         <td>
                           {String(
                             universities.data?.find(
@@ -260,21 +325,39 @@ function Manager({ kind }: { kind: ContentKind }) {
                         </td>
                       )}
                       <td>
-                        <span
-                          className={
-                            "badge " + (r.published ? "published" : "")
-                          }
-                        >
-                          {r.deleted_at
-                            ? "محذوف"
-                            : r.published
-                              ? "منشور"
-                              : "مسودة"}
+                        <span className={"badge " + rowState(r).cls}>
+                          {rowState(r).label}
                         </span>
                       </td>
                       <td>
                         <div className="actions">
-                          {edit && !r.deleted_at && (
+                          {kind === "universities" && !r.deleted_at && (
+                            <Link
+                              className="icon-btn"
+                              aria-label={"فتح مساحة عمل " + rowLabel(r)}
+                              title="مساحة عمل الجامعة"
+                              to={"/admin/universities/" + r.id}
+                            >
+                              <FolderOpen size={16} />
+                            </Link>
+                          )}
+                          {kind === "universities" &&
+                            publish &&
+                            edit &&
+                            !r.deleted_at && (
+                              <button
+                                className="icon-btn"
+                                title="نشر الجامعة ومحتواها"
+                                aria-label={"نشر الجامعة ومحتواها: " + rowLabel(r)}
+                                onClick={() =>
+                                  setAction({ ids: [r.id], action: "publish_all" })
+                                }
+                              >
+                                <Rocket size={16} />
+                              </button>
+                            )}
+                          {/* The database only lets publishers edit published rows. */}
+                          {edit && !r.deleted_at && (publish || !r.published) && (
                             <button
                               className="icon-btn"
                               aria-label={"تعديل " + rowLabel(r)}
@@ -286,23 +369,51 @@ function Manager({ kind }: { kind: ContentKind }) {
                               <Pencil size={16} />
                             </button>
                           )}
-                          {publish && !r.deleted_at && (
-                            <button
-                              className="icon-btn"
-                              aria-label={
-                                (r.published ? "إلغاء نشر " : "نشر ") +
-                                rowLabel(r)
-                              }
-                              onClick={() =>
-                                setAction({
-                                  ids: [r.id],
-                                  action: r.published ? "draft" : "publish",
-                                })
-                              }
-                            >
-                              <Upload size={16} />
-                            </button>
-                          )}
+                          {publish &&
+                            !r.deleted_at &&
+                            (rowState(r).key === "excluded" ? (
+                              <button
+                                className="icon-btn"
+                                title="إعادة إدراج"
+                                aria-label={"إعادة إدراج " + rowLabel(r)}
+                                onClick={() =>
+                                  setAction({ ids: [r.id], action: "include" })
+                                }
+                              >
+                                <Eye size={16} />
+                              </button>
+                            ) : (
+                              <button
+                                className="icon-btn"
+                                title={
+                                  r.published
+                                    ? excludable
+                                      ? "إخفاء عن الطلاب"
+                                      : "إلغاء النشر"
+                                    : "نشر"
+                                }
+                                aria-label={
+                                  (r.published ? "إلغاء نشر " : "نشر ") +
+                                  rowLabel(r)
+                                }
+                                onClick={() =>
+                                  setAction({
+                                    ids: [r.id],
+                                    action: r.published
+                                      ? excludable
+                                        ? "draft"
+                                        : "unpublish"
+                                      : "publish",
+                                  })
+                                }
+                              >
+                                {r.published ? (
+                                  <EyeOff size={16} />
+                                ) : (
+                                  <Upload size={16} />
+                                )}
+                              </button>
+                            ))}
                           {remove && (
                             <button
                               className="icon-btn"
@@ -385,7 +496,10 @@ function Manager({ kind }: { kind: ContentKind }) {
             }}
           >
             <div className="form-grid">
-              {kind !== "universities" && (
+              {kind !== "universities" && universityLock && (
+                <input type="hidden" name="university_id" value={universityLock} />
+              )}
+              {kind !== "universities" && !universityLock && (
                 <Field label="الجامعة">
                   <select
                     name="university_id"
@@ -463,17 +577,38 @@ function Manager({ kind }: { kind: ContentKind }) {
       <Confirm
         open={!!action}
         title="تأكيد الإجراء"
-        body={`سيُطبق الإجراء (${({ publish: "نشر", draft: "مسودة", trash: "نقل للسلة", restore: "استعادة" } as Record<string, string>)[action?.action || ""] || ""}) على ${action?.ids.length || 0} سجل. النقل للسلة قابل للاستعادة.`}
+        body={
+          action?.action === "publish_all"
+            ? "ستُنشر الجامعة مع تخصصاتها ومساراتها وأقسامها غير المخفية يدويًا. المسارات الناقصة تبقى مسودة، والنسب السابقة لا تُنشر تلقائيًا."
+            : `سيُطبق الإجراء (${actionLabels[action?.action || ""] || ""}) على ${action?.ids.length || 0} سجل.` +
+              (action?.action === "trash"
+                ? " النقل للسلة قابل للاستعادة، ويُخفي السجل عن الطلاب."
+                : action?.action === "draft"
+                  ? " لن يعود للظهور عند إعادة نشر الجامعة حتى تعيد إدراجه."
+                  : action?.action === "restore"
+                    ? " يعود السجل مخفيًا؛ أعد إدراجه أو انشره عندما يكون جاهزًا."
+                    : "")
+        }
         busy={busy}
         onClose={() => setAction(null)}
         onConfirm={async () => {
           if (!action) return;
           setBusy(true);
           try {
-            const count = await changeState(kind, action.ids, action.action);
-            toast("تم تحديث " + count + " سجل");
-            setSelected([]);
-            setAction(null);
+            if (action.action === "publish_all") {
+              const report = await publishUniversityWithContent(action.ids[0]);
+              toast(describePublish(report));
+              setAction(null);
+            } else {
+              const serverAction =
+                action.action === "unpublish" ? "draft" : action.action;
+              const result = await changeState(kind, action.ids, serverAction);
+              const ok = !result.failed.length;
+              toast(describeState(result, action.ids.length), !ok);
+              // Keep only the failed records selected so a retry touches nothing else.
+              setSelected(result.failed);
+              setAction(null);
+            }
           } catch (err) {
             toast(friendly(err), true);
           } finally {

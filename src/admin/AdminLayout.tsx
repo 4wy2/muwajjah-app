@@ -12,6 +12,16 @@ export default function AdminLayout() {
   const location = useLocation();
   if (q.isPending) return <Loading />;
   if (q.error) return <ErrorState error={q.error} retry={() => q.refetch()} />;
+  if (!q.data && user?.user_metadata?.guide_signup)
+    return (
+      <Empty title="طلبك قيد مراجعة المالك">
+        <p>
+          سيظهر لك قسم الإدارة بعد أن يعتمد مالك مُوجّه طلبك ويحدد الجامعات
+          المسندة إليك وصلاحياتك.
+        </p>
+        <Link to="/">العودة للدليل</Link>
+      </Empty>
+    );
   if (!q.data?.is_enabled)
     return (
       <Empty title="هذا الحساب غير مخوّل لدخول الإدارة">
@@ -40,7 +50,10 @@ export default function AdminLayout() {
         <h2>إدارة المحتوى</h2>
         <nav aria-label="أقسام لوحة الإدارة">
           {adminModules
-            .filter((module) => canOpenAdminModule(q.data, module.access))
+            .filter(
+              (module) =>
+                !module.hidden && canOpenAdminModule(q.data, module.access),
+            )
             .map((module) => (
               <NavLink key={module.path} to={"/admin/" + module.path}>
                 <module.icon size={18} />

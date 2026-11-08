@@ -1884,3 +1884,169 @@ details > summary {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ===================================================================
+   v2.1 — measured sizing pass and new reading components.
+   Kept as one block appended last so the earlier rules stay intact and
+   every override is easy to find, tweak or revert in one place.
+   =================================================================== */
+body { font-size: 15px; line-height: 1.7; }
+h1 { font-size: 26px; line-height: 1.35; letter-spacing: 0; margin-bottom: 6px; }
+h2 { font-size: 18px; margin-bottom: 10px; }
+h3 { font-size: 16px; margin-bottom: 6px; }
+small, .small { font-size: 13px; }
+.main { padding-top: 22px; padding-bottom: 36px; }
+.topbar { height: 66px; }
+.nav-row { gap: 28px; }
+.brand { font-size: 24px; gap: 8px; }
+.brand small { font-size: 11px; margin-top: 5px; }
+.brand-icon { width: 38px; height: 38px; border-radius: 11px; }
+.brand-icon svg { width: 24px; height: 24px; }
+.topbar nav { gap: 20px; }
+.topbar nav a { font-size: 14px; }
+.btn { font-size: 15px; padding: 10px 16px; min-height: 44px; gap: 8px; }
+.btn.compact { font-size: 14px; padding: 7px 12px; min-height: 40px; }
+.icon-btn { width: 40px; height: 40px; }
+.favorite { width: 40px; height: 40px; }
+input, select, textarea { min-height: 44px; padding: 9px 12px; }
+
+/* Catalogue */
+.catalog-head { margin-bottom: 14px; }
+.catalog-head h1 { font-size: 24px; margin: 0 0 2px; }
+.catalog-head p { color: var(--muted); margin: 0; font-size: 14px; }
+.catalog .search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; padding: 0 12px; margin-bottom: 12px;
+}
+.catalog .search-box input { border: 0; box-shadow: none; padding-inline: 0; background: transparent; }
+.catalog .search-box svg { color: var(--muted); }
+.catalog .results-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.type-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip-btn {
+  border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  border-radius: 999px; padding: 6px 14px; font-size: 14px; min-height: 40px; font-weight: 500;
+}
+.chip-btn.active { background: var(--tint); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.university-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.university-card {
+  padding: 14px; border-radius: 12px; position: relative; gap: 4px;
+}
+.university-card:hover { transform: none; }
+.university-card .card-top { margin-bottom: 8px; }
+.university-card .university-logo { width: 46px; height: 46px; border-radius: 10px; }
+.university-card .university-logo svg { width: 22px; height: 22px; }
+.card-title { margin: 0; }
+.card-title h3 { font-size: 15.5px; min-height: 0; line-height: 1.5; }
+/* The title link covers the card so the whole card opens the profile, while
+   the favourite and compare buttons stay independently clickable above it. */
+.card-title.stretched::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.card-title.stretched:focus-visible { outline: none; }
+.card-title.stretched:focus-visible::after { outline: 3px solid #937deb; outline-offset: 2px; }
+.university-card .favorite, .university-card .compare-button { position: relative; z-index: 2; }
+.card-location { font-size: 13px; color: var(--muted); margin: 0; gap: 4px; align-items: center; }
+.card-facts { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.card-facts .fact { display: inline-flex; gap: 4px; align-items: center; font-size: 12.5px; color: var(--muted); }
+.university-card .compare-button { margin-top: 10px; align-self: flex-start; min-height: 36px; font-size: 13px; }
+.load-more { display: flex; justify-content: center; margin-top: 18px; }
+
+/* Admin state badges */
+.badge.excluded { background: #fdecec; color: #a2353f; }
+.badge.trash { background: #eeeef2; color: #63616e; }
+[data-theme="dark"] .badge.excluded { background: #43232d; color: #ffc1ce; }
+[data-theme="dark"] .badge.trash { background: #33313b; color: #c9c5d4; }
+
+/* University profile: one continuous reading column */
+.profile { max-width: 860px; margin-inline: auto; }
+.profile .breadcrumbs { font-size: 13px; color: var(--muted); display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.profile-header {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center;
+  padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 6px;
+}
+.profile-header .university-logo { width: 58px; height: 58px; }
+.profile-id h1 { font-size: 24px; margin: 0 0 4px; }
+.profile-meta { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0; color: var(--muted); font-size: 14px; }
+.profile-meta span { display: inline-flex; gap: 4px; align-items: center; }
+.profile-actions { display: flex; gap: 8px; align-items: center; }
+.profile-block { padding: 18px 0; border-bottom: 1px solid var(--line); }
+.profile-block:last-of-type { border-bottom: 0; }
+.profile-block > h2 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+.profile-block p { margin-bottom: 8px; }
+.flex-section + .flex-section, .flex-section + .track, .track + .track { margin-top: 14px; }
+.flex-section h3 { font-size: 15px; margin-bottom: 4px; }
+.profile .source { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.profile .source a { display: inline-flex; gap: 3px; align-items: center; }
+.track { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.track-head { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+.track-head h3 { margin: 0 0 0 4px; font-size: 15px; }
+.chip { font-size: 12px; background: var(--tint); color: var(--accent); border-radius: 999px; padding: 1px 9px; }
+.track .weights { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.track .weights span { font-size: 13px; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px 9px; }
+.calculator { margin-top: 14px; background: var(--tint); border-radius: 12px; padding: 14px; border: 0; box-shadow: none; }
+.calculator h3 { display: flex; gap: 6px; align-items: center; font-size: 15px; }
+.calculator .score-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.calc-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.score-output { font-size: 14px; }
+.score-output strong { font-size: 20px; color: var(--accent); margin-inline-start: 6px; }
+.inline-search { margin-bottom: 10px; }
+.program-group { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin-bottom: 8px; }
+.program-group summary {
+  cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; font-weight: 700; font-size: 14.5px; min-height: 44px;
+}
+.program-group summary::-webkit-details-marker { display: none; }
+.program-group summary::after { content: "▾"; color: var(--muted); margin-inline-start: 8px; transition: transform .15s; }
+.program-group[open] summary::after { transform: rotate(180deg); }
+.program-group summary small { margin-inline-start: auto; color: var(--muted); font-weight: 500; background: var(--bg); border-radius: 999px; padding: 0 8px; }
+.program-list { list-style: none; margin: 0; padding: 0 14px 6px; }
+.program-list li { display: flex; justify-content: space-between; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line); }
+.program-name { display: block; font-size: 14.5px; }
+.program-meta, .program-route { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.program-list .favorite { width: 36px; height: 36px; }
+.compact-table { font-size: 14px; }
+.compact-table th, .compact-table td { padding: 8px 10px; }
+.housing-status { font-weight: 700; }
+.plus-callout { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--tint); border-radius: 10px; padding: 12px 14px; }
+.plus-callout p { margin: 0; flex: 1; min-width: 180px; }
+
+@media (max-width: 1200px) {
+  .university-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 800px) {
+  .university-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .topbar { height: auto; }
+  h1, .profile-id h1, .catalog-head h1 { font-size: 21px; }
+  .profile-header { grid-template-columns: auto minmax(0, 1fr); }
+  .profile-actions { grid-column: 1 / -1; }
+}
+@media (max-width: 480px) {
+  .university-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .university-card { padding: 11px; }
+  .university-card .university-logo { width: 38px; height: 38px; }
+  .card-title h3 { font-size: 14.5px; }
+  .calculator .score-fields { grid-template-columns: 1fr; }
+}
+@media (max-width: 359px) {
+  .university-grid { grid-template-columns: 1fr; }
+}
+.track .weights span { display: inline-flex; flex-direction: row; gap: 5px; flex: none; padding: 3px 10px; color: var(--muted); background: var(--bg); }
+.track .weights b { font-size: 13px; }
+.calculator { max-width: none; }
+.admission-source { margin-top: 10px; }
+.catalog .result-info { display: inline; }
+.catalog .results-bar { padding: 0; }
+@media (max-width: 800px) {
+  .nav-row { gap: 8px 12px; padding-top: 10px; }
+  .brand { font-size: 22px; }
+  .brand-icon { width: 34px; height: 34px; }
+  .topbar nav { justify-content: flex-start; gap: 18px; }
+  .topbar nav a { height: 42px; }
+  .nav-actions .btn { min-height: 38px; padding: 6px 12px; font-size: 13px; }
+  .main { padding-top: 16px; }
+}
+.university-card .card-facts { margin-top: auto; padding-top: 6px; margin-bottom: 0; } .card-facts span.badge { display: inline-flex; }
+.profile .program-group { margin: 0 0 8px; }
+/* The whole zone is the click target; hide the browser's English file widget. */
+.upload-zone { position: relative; }
+.upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; max-width: none; width: 100%; height: 100%; }
+.upload-zone:focus-within { outline: 3px solid #937deb; outline-offset: 2px; }

@@ -72,7 +72,13 @@ export function makeDiff(
         throw new Error("السجل في السلة. استعده قبل التعديل.");
       if (old && raw.university_id && raw.university_id !== old.university_id)
         throw new Error("لا يمكن نقل السجل لجامعة أخرى.");
-      const payload = sanitize(kind, old ? { ...old, ...raw } : raw, !!old);
+      // Empty cells in the file never overwrite stored values.
+      const filled = Object.fromEntries(
+        Object.entries(raw).filter(
+          ([, v]) => v !== null && v !== undefined && String(v).trim() !== "",
+        ),
+      );
+      const payload = sanitize(kind, old ? { ...old, ...filled } : raw, !!old);
       if (
         kind !== "universities" &&
         !universities.some(

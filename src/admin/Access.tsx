@@ -89,9 +89,13 @@ export default function Access() {
                       args: {
                         target_feature: f.feature_key,
                         target_mode: e.target.value,
-                        offer_visible: e.target.value === "plus",
+                        // Changing access never switches marketing on by itself.
+                        offer_visible: e.target.value === "plus" && f.show_offer,
                       },
-                      description: "تغيير صلاحية الميزة لجميع الزوار والطلاب؟",
+                      description:
+                        e.target.value === "plus"
+                          ? "ستُتاح الميزة لمن تمنحه بلس فقط. بقية الزوار لن يروها ولن يروا أي إشارة للاشتراك ما لم تفعّل «إظهار عرض الاشتراك»."
+                          : "تغيير صلاحية الميزة لجميع الزوار والطلاب؟",
                     })
                   }
                 >
@@ -99,6 +103,29 @@ export default function Access() {
                   <option value="free">مجانية</option>
                   <option value="plus">بلس</option>
                 </select>
+                {f.access_mode === "plus" && (
+                  <label className="choice">
+                    <input
+                      type="checkbox"
+                      checked={f.show_offer}
+                      disabled={busy}
+                      onChange={(e) =>
+                        setAction({
+                          name: "guide_owner_set_feature",
+                          args: {
+                            target_feature: f.feature_key,
+                            target_mode: "plus",
+                            offer_visible: e.target.checked,
+                          },
+                          description: e.target.checked
+                            ? "سيرى الزوار قفلًا ودعوة للاشتراك في هذه الميزة. متأكد؟"
+                            : "إخفاء عرض الاشتراك عن الزوار؟",
+                        })
+                      }
+                    />
+                    إظهار عرض الاشتراك للزوار
+                  </label>
+                )}
               </div>
             ))
         )}

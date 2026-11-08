@@ -12,6 +12,7 @@ import {
   useToast,
 } from "../components/ui";
 import { downloadJson, friendly, number } from "../lib/utils";
+import AnalyticsArchive from "./AnalyticsArchive";
 interface Hit {
   event_day: string;
   event_kind: string;
@@ -108,10 +109,11 @@ export default function Analytics() {
             }}
           >
             <Download size={16} />
-            {busy ? "جارٍ التصدير…" : "تصدير الأرشيف"}
+            {busy ? "جارٍ التصدير…" : "تصدير كل التحليلات"}
           </button>
         </div>
       </PageHeading>
+      <AnalyticsArchive />
       {q.isPending ? (
         <Loading />
       ) : q.error ? (

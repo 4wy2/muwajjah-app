@@ -1,14 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
-import {
-  MapPin,
-  ExternalLink,
-  Calculator,
-  LockKeyhole,
-  GraduationCap,
-  Building2,
-  BookOpen,
-} from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Link, useParams } from "react-router-dom";
+import { MapPin, ExternalLink, Calculator, LockKeyhole } from "lucide-react";
 import {
   useUniversity,
   useUniversityContent,
@@ -34,8 +26,78 @@ import {
   safeUrl,
   friendly,
   normalize,
+  isWeighted,
+  hostOf,
+  place,
 } from "../lib/utils";
-import type { Program, Track, Section } from "../lib/types";
+import { groupSections, slotOrder, type SlotKey } from "../lib/sections";
+import type { Program, Track, Section, University as Uni } from "../lib/types";
+
+// Shows a source link only when one exists. "موقع الجامعة" is used only when the
+// link points at the university's own website; nothing else is called official.
+export function Source({
+  url,
+  verified,
+  website,
+}: {
+  url: string;
+  verified?: string | null;
+  website?: string;
+}) {
+  const href = safeUrl(url);
+  if (!href && !verified) return null;
+  const own = !!href && !!website && hostOf(href) === hostOf(website);
+  return (
+    <div className="source">
+      {href && (
+        <a href={href} target="_blank" rel="noreferrer">
+          {own ? "موقع الجامعة" : "المصدر"} <ExternalLink size={12} />
+        </a>
+      )}
+      {verified && <small>رُوجع في {date(verified)}</small>}
+    </div>
+  );
+}
+
+function Block({
+  id,
+  title,
+  children,
+}: {
+  id: string;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="profile-block" id={id} aria-labelledby={id + "-h"}>
+      <h2 id={id + "-h"}>{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function SectionList({
+  items,
+  website,
+  showTitles,
+}: {
+  items: Section[];
+  website: string;
+  showTitles: boolean;
+}) {
+  return (
+    <>
+      {items.map((s) => (
+        <div className="flex-section" key={s.id}>
+          {showTitles && <h3>{s.title}</h3>}
+          <p className="prewrap">{s.content}</p>
+          <Source url={s.source_url} verified={s.verified_on} website={website} />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function CalculatorForm({
   tracks,
   universityId,
@@ -46,38 +108,35 @@ export function CalculatorForm({
   const { user } = useAuth();
   const history = useScores();
   const toast = useToast();
+  const weighted = tracks.filter(isWeighted);
   const [trackId, setTrackId] = useState("");
   const [values, setValues] = useState(["", "", ""]);
   const [edited, setEdited] = useState(false);
   const [result, setResult] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const track = tracks.find((t) => t.id === trackId) || tracks[0];
+  const track = weighted.find((t) => t.id === trackId) || weighted[0];
   useEffect(() => {
     setValues(["", "", ""]);
     setEdited(false);
     setResult(null);
   }, [user?.id]);
+  // Prefill only from a saved result for the same track; never invent grades.
   useEffect(() => {
-    const last = history.data?.[0];
-    if (last && !edited)
-      setValues([
-        String(last.school),
-        String(last.aptitude),
-        String(last.achievement),
-      ]);
-  }, [history.data, edited]);
-  if (!tracks.length)
-    return <Empty title="لم تُضف مسارات موزونة لهذه الجامعة بعد" />;
+    if (!track || edited) return;
+    const last = history.data?.find((h) => h.track_id === track.id);
+    setValues(
+      last
+        ? [String(last.school), String(last.aptitude), String(last.achievement)]
+        : ["", "", ""],
+    );
+  }, [history.data, edited, track?.id]);
+  if (!track) return null;
   return (
-    <div className="calculator panel">
-      <div className="section-title">
-        <Calculator />
-        <h2>حاسبة الموزونة</h2>
-      </div>
-      <p className="muted">
-        أدخل درجاتك وفق مسار القبول. النتيجة لا تضمن القبول.
-      </p>
+    <div className="calculator">
+      <h3>
+        <Calculator size={18} /> احسب موزونتك
+      </h3>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -92,14 +151,14 @@ export function CalculatorForm({
                   user_id: user.id,
                   university_id: universityId,
                   track_id: track.id,
-                  school: Number(values[0]),
-                  aptitude: Number(values[1]),
-                  achievement: Number(values[2]),
+                  school: Number(values[0] || 0),
+                  aptitude: Number(values[1] || 0),
+                  achievement: Number(values[2] || 0),
                   result: score,
                 });
-                toast("حُفظت الموزونة في حسابك");
+                toast("حُفظت النتيجة في حسابك");
               } catch (err) {
-                toast("تم الحساب، وتعذر حفظ السجل. " + friendly(err), true);
+                toast("تم الحساب، وتعذر حفظ النتيجة. " + friendly(err), true);
               } finally {
                 setSaving(false);
               }
@@ -110,29 +169,31 @@ export function CalculatorForm({
           }
         }}
       >
-        <Field label="مسار القبول">
-          <select
-            value={track.id}
-            onChange={(e) => {
-              setTrackId(e.target.value);
-              setResult(null);
-              setError("");
-            }}
-          >
-            {tracks.map((t) => (
-              <option value={t.id} key={t.id}>
-                {t.name} · {t.academic_year}
-              </option>
-            ))}
-          </select>
-        </Field>
+        {weighted.length > 1 && (
+          <Field label="المسار">
+            <select
+              value={track.id}
+              onChange={(e) => {
+                setTrackId(e.target.value);
+                setEdited(false);
+                setResult(null);
+                setError("");
+              }}
+            >
+              {weighted.map((t) => (
+                <option value={t.id} key={t.id}>
+                  {[t.name, t.gender, t.academic_year].filter(Boolean).join(" · ")}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <div className="score-fields">
           {["الثانوية", "القدرات", "التحصيلي"].map((label, i) => {
-            const w = [
-              track.school_weight,
-              track.aptitude_weight,
-              track.achievement_weight,
-            ][i];
+            const w = Number(
+              [track.school_weight, track.aptitude_weight, track.achievement_weight][i],
+            );
+            if (w === 0) return null;
             return (
               <Field key={label} label={label + " (" + w + "%)"}>
                 <input
@@ -141,15 +202,13 @@ export function CalculatorForm({
                   max="100"
                   step="0.01"
                   inputMode="decimal"
-                  required={Number(w) > 0}
-                  disabled={Number(w) === 0}
+                  dir="ltr"
+                  required
                   value={values[i]}
                   placeholder="0 – 100"
                   onChange={(e) => {
                     setEdited(true);
-                    setValues((v) =>
-                      v.map((x, j) => (i === j ? e.target.value : x)),
-                    );
+                    setValues((v) => v.map((x, j) => (i === j ? e.target.value : x)));
                     setResult(null);
                   }}
                 />
@@ -157,119 +216,234 @@ export function CalculatorForm({
             );
           })}
         </div>
-        <button className="btn primary" disabled={saving}>
-          {saving ? "جارٍ الحفظ…" : "احسب موزونتي"}
-        </button>
+        <div className="calc-actions">
+          <button className="btn primary compact" disabled={saving}>
+            {saving ? "جارٍ الحفظ…" : "احسب"}
+          </button>
+          {result !== null && (
+            <output className="score-output">
+              نسبتك الموزونة <strong dir="ltr">{result.toFixed(2)}%</strong>
+            </output>
+          )}
+        </div>
         {error && (
           <p role="alert" className="error-text">
             {error}
           </p>
         )}
-        {result !== null && (
-          <output className="score-output">
-            <span>نسبتك الموزونة</span>
-            <strong>
-              {result.toFixed(2)}
-              <small>%</small>
-            </strong>
-          </output>
-        )}
-        {!user && (
-          <p className="muted small">
-            <Link to="/auth/login">سجّل دخولك</Link> لحفظ الدرجات والرجوع لها.
-          </p>
-        )}
+        <p className="muted small">
+          النتيجة تقديرية وفق الأوزان المنشورة، ولا تعني ضمان القبول.
+          {!user && (
+            <>
+              {" "}
+              <Link to="/auth/login">سجّل دخولك</Link> لحفظ نتائجك.
+            </>
+          )}
+        </p>
       </form>
     </div>
   );
 }
-function Cutoffs({ id }: { id: string }) {
+
+function TrackItem({
+  t,
+  website,
+  hideSource,
+}: {
+  t: Track;
+  website: string;
+  hideSource?: boolean;
+}) {
+  const weighted = isWeighted(t);
+  return (
+    <article className="track">
+      <div className="track-head">
+        <h3>{t.name}</h3>
+        {[t.gender, t.academic_year].filter(Boolean).map((x) => (
+          <span className="chip" key={x}>
+            {x}
+          </span>
+        ))}
+      </div>
+      {weighted && (
+        <div className="weights">
+          {[
+            ["الثانوية", t.school_weight],
+            ["القدرات", t.aptitude_weight],
+            ["التحصيلي", t.achievement_weight],
+          ]
+            .filter(([, w]) => Number(w) > 0)
+            .map(([l, w]) => (
+              <span key={String(l)}>
+                {l} <b dir="ltr">{Number(w)}%</b>
+              </span>
+            ))}
+        </div>
+      )}
+      {t.requirements?.trim() && <p className="prewrap">{t.requirements}</p>}
+      {!hideSource && (
+        <Source url={t.source_url} verified={t.verified_on} website={website} />
+      )}
+    </article>
+  );
+}
+
+function Programs({ programs }: { programs: Program[] }) {
+  const [search, setSearch] = useState("");
+  const filtered = programs.filter((p) =>
+    normalize(p.name + " " + p.college).includes(normalize(search)),
+  );
+  const groups = useMemo(() => {
+    const m = new Map<string, Program[]>();
+    for (const p of filtered) {
+      const k = p.college?.trim() || "";
+      m.set(k, [...(m.get(k) || []), p]);
+    }
+    // Named colleges first; ungrouped programs last.
+    return [...m.entries()].sort(([a], [b]) => (!a ? 1 : !b ? -1 : 0));
+  }, [filtered]);
+  const many = programs.length > 15;
+  const meta = (p: Program) =>
+    [p.degree, p.gender, p.campus]
+      .map((x) => (x || "").trim())
+      .filter((x) => x && x !== "غير محدد");
+  return (
+    <>
+      {many && (
+        <input
+          className="inline-search"
+          aria-label="ابحث عن تخصص"
+          type="search"
+          placeholder="ابحث باسم التخصص أو الكلية"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      )}
+      {!filtered.length ? (
+        <p className="muted">لا توجد تخصصات مطابقة.</p>
+      ) : (
+        groups.map(([college, list]) => (
+          <details
+            className="program-group"
+            key={college || "_"}
+            open={!many || !!search}
+          >
+            <summary>
+              <span>{college || (groups.length > 1 ? "تخصصات أخرى" : "التخصصات")}</span>
+              <small>{list.length}</small>
+            </summary>
+            <ul className="program-list">
+              {list.map((p) => (
+                <li key={p.id}>
+                  <div>
+                    <span className="program-name">{p.name}</span>
+                    {meta(p).length > 0 && (
+                      <small className="program-meta">{meta(p).join(" · ")}</small>
+                    )}
+                    {p.admission_route?.trim() && (
+                      <small className="program-route">{p.admission_route}</small>
+                    )}
+                  </div>
+                  <FavoriteButton kind="program" id={p.id} label={p.name} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ))
+      )}
+    </>
+  );
+}
+
+function Cutoffs({ id, sections, website }: { id: string; sections: Section[]; website: string }) {
   const { user } = useAuth();
   const mode = useFeature("historical_cutoffs", user?.id);
   const allowed = mode.data === "free" || mode.data === "plus";
   const q = useCutoffs(id, allowed, user?.id);
-  if (mode.isPending) return <Loading />;
-  if (mode.error)
-    return <ErrorState error={mode.error} retry={() => mode.refetch()} />;
-  if (mode.data === "hidden")
-    return <Empty title="النسب السابقة غير متاحة حاليًا" />;
-  if (!allowed)
+  // Hidden feature: the block does not exist at all (no "unavailable" notice).
+  if (mode.isPending || mode.error || mode.data === "hidden" || !mode.data) return null;
+  if (mode.data === "locked")
     return (
-      <div className="plus-callout">
-        <LockKeyhole size={30} />
-        <span className="badge plus">مُوجّه بلس</span>
-        <h2>صورة أوضح عن فرصك</h2>
-        <p>تعرّف على نسب القبول السابقة ضمن مزايا بلس.</p>
-        <Link
-          to={user ? "/student/subscription" : "/auth/login"}
-          className="btn primary"
-        >
-          {user ? "عرض الاشتراك" : "سجّل دخولك"}
-        </Link>
-      </div>
+      <Block id="cutoffs" title="نسب القبول السابقة">
+        <div className="plus-callout">
+          <LockKeyhole size={22} />
+          <p>نسب القبول السابقة متاحة لمشتركي مُوجّه بلس.</p>
+          <Link to={user ? "/student/subscription" : "/auth/login"} className="btn secondary compact">
+            {user ? "تفاصيل الاشتراك" : "سجّل دخولك"}
+          </Link>
+        </div>
+      </Block>
     );
-  if (q.isPending) return <Loading />;
-  if (q.error) return <ErrorState error={q.error} retry={() => q.refetch()} />;
-  return q.data?.length ? (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>التخصص</th>
-            <th>العام</th>
-            <th>الفئة</th>
-            <th>النسبة</th>
-            <th>المصدر</th>
-          </tr>
-        </thead>
-        <tbody>
-          {q.data.map((c) => (
-            <tr key={c.id}>
-              <td>{c.program_name}</td>
-              <td>{c.academic_year}</td>
-              <td>{c.gender}</td>
-              <td>
-                <strong className="accent">{c.ratio}%</strong>
-              </td>
-              <td>
-                <Source url={c.source_url} verified={c.verified_on} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <Empty title="لم تُنشر نسب سابقة بعد" />
-  );
-}
-export function Source({
-  url,
-  verified,
-}: {
-  url: string;
-  verified?: string | null;
-}) {
+  if (q.isPending) return null;
+  if (q.error)
+    return (
+      <Block id="cutoffs" title="نسب القبول السابقة">
+        <ErrorState error={q.error} retry={() => q.refetch()} />
+      </Block>
+    );
+  const rows = q.data || [];
+  if (!rows.length && !sections.length) return null;
+  const hasGender = rows.some((c) => c.gender?.trim());
+  const hasSource = rows.some((c) => safeUrl(c.source_url));
   return (
-    <div className="source">
-      {safeUrl(url) && (
-        <a href={safeUrl(url)} target="_blank" rel="noreferrer">
-          المصدر الرسمي <ExternalLink size={13} />
-        </a>
+    <Block id="cutoffs" title="نسب القبول السابقة">
+      {rows.length > 0 && (
+        <div className="table-wrap">
+          <table className="compact-table">
+            <thead>
+              <tr>
+                <th>التخصص</th>
+                <th>العام</th>
+                {hasGender && <th>الفئة</th>}
+                <th>النسبة</th>
+                {hasSource && <th>المصدر</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.program_name}</td>
+                  <td>{c.academic_year}</td>
+                  {hasGender && <td>{c.gender}</td>}
+                  <td>
+                    <strong className="accent" dir="ltr">
+                      {Number(c.ratio)}%
+                    </strong>
+                  </td>
+                  {hasSource && (
+                    <td>
+                      <Source url={c.source_url} verified={c.verified_on} website={website} />
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      {verified && <small>تاريخ التحقق: {date(verified)}</small>}
-    </div>
+      <SectionList items={sections} website={website} showTitles />
+    </Block>
   );
 }
+
+function Housing({ uni }: { uni: Uni }) {
+  const label = housing(uni.housing_status);
+  if (!label && !uni.housing_note?.trim()) return null;
+  return (
+    <>
+      {label && <p className="housing-status">{label}</p>}
+      {uni.housing_note?.trim() && <p className="prewrap">{uni.housing_note}</p>}
+      <Source url={uni.housing_source_url} verified={uni.housing_verified_on} website={uni.website_url} />
+    </>
+  );
+}
+
 export default function University() {
   const { id = "" } = useParams();
-  const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") || "overview";
   const u = useUniversity(id);
   const programs = useUniversityContent<Program>("programs", id);
   const tracks = useUniversityContent<Track>("tracks", id);
   const sections = useUniversityContent<Section>("sections", id);
-  const [search, setSearch] = useState("");
   const { user } = useAuth();
   const cutoffFeature = useFeature("historical_cutoffs", user?.id);
   const canViewCutoffSections =
@@ -293,228 +467,148 @@ export default function University() {
       </Empty>
     );
   const uni = u.data;
-  const filtered =
-    programs.data?.filter((p) =>
-      normalize(p.name + " " + p.college).includes(normalize(search)),
-    ) || [];
-  const colleges = [
-    ...new Set(filtered.map((p) => p.college || "تخصصات أخرى")),
-  ];
+  const web = uni.website_url;
+  const groups = groupSections(
+    (sections.data || []).filter(
+      (s) => s.feature_key !== "historical_cutoffs" || canViewCutoffSections,
+    ),
+  );
+  const take = (k: SlotKey) => groups.get(k) || [];
+  const title = (k: SlotKey) => slotOrder.find((s) => s.key === k)!.title;
+  // Show a flexible section's own title only when it differs from the block title.
+  const flex = (k: SlotKey) => {
+    const items = take(k);
+    if (!items.length) return null;
+    // A single section in a named slot is introduced by the slot title alone;
+    // "extra" sections (fees, campus life…) always keep their own titles.
+    const showTitles = items.length > 1 || k === "extra";
+    return (
+      <Block id={k} title={title(k)} key={k}>
+        <SectionList items={items} website={web} showTitles={showTitles} />
+      </Block>
+    );
+  };
+  const trackList = tracks.data || [];
+  // One source line for the whole list when every track cites the same page.
+  const sharedSource =
+    trackList.length > 1 &&
+    trackList.every(
+      (t) =>
+        t.source_url === trackList[0].source_url &&
+        t.verified_on === trackList[0].verified_on,
+    );
+  const contentError = programs.error || tracks.error || sections.error;
+  const blocks: ReactNode[] = [];
+  for (const { key } of slotOrder) {
+    if (key === "about") {
+      if (uni.description?.trim() || take("about").length)
+        blocks.push(
+          <Block id="about" title={title("about")} key="about">
+            {uni.description?.trim() && <p className="prewrap">{uni.description}</p>}
+            <Source url={uni.source_url} verified={uni.verified_on} website={web} />
+            <SectionList items={take("about")} website={web} showTitles />
+          </Block>,
+        );
+    } else if (key === "admission") {
+      if (trackList.length || take("admission").length)
+        blocks.push(
+          <Block id="admission" title={title("admission")} key="admission">
+            <SectionList items={take("admission")} website={web} showTitles={take("admission").length > 1 || trackList.length > 0} />
+            {trackList.map((t) => (
+              <TrackItem t={t} key={t.id} website={web} hideSource={sharedSource} />
+            ))}
+            {sharedSource && (
+              <div className="admission-source">
+                <Source url={trackList[0].source_url} verified={trackList[0].verified_on} website={web} />
+              </div>
+            )}
+            <ErrorBoundary>
+              <CalculatorForm tracks={trackList} universityId={id} />
+            </ErrorBoundary>
+          </Block>,
+        );
+    } else if (key === "programs") {
+      if (programs.data?.length)
+        blocks.push(
+          <Block id="programs" title={title("programs")} key="programs">
+            <Programs programs={programs.data} />
+          </Block>,
+        );
+    } else if (key === "cutoffs") {
+      blocks.push(<Cutoffs id={id} key="cutoffs" sections={take("cutoffs")} website={web} />);
+    } else if (key === "housing") {
+      if (housing(uni.housing_status) || uni.housing_note?.trim() || take("housing").length)
+        blocks.push(
+          <Block id="housing" title={title("housing")} key="housing">
+            <Housing uni={uni} />
+            <SectionList items={take("housing")} website={web} showTitles={take("housing").length > 1} />
+          </Block>,
+        );
+    } else if (key === "contact") {
+      if (safeUrl(web) || take("contact").length)
+        blocks.push(
+          <Block id="contact" title={title("contact")} key="contact">
+            <SectionList items={take("contact")} website={web} showTitles={take("contact").length > 1} />
+            {safeUrl(web) && (
+              <p>
+                <a href={safeUrl(web)} target="_blank" rel="noreferrer" dir="ltr">
+                  {hostOf(web)} <ExternalLink size={13} />
+                </a>
+              </p>
+            )}
+          </Block>,
+        );
+    } else {
+      const b = flex(key);
+      if (b) blocks.push(b);
+    }
+  }
+  const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
   return (
-    <>
-      <div className="breadcrumbs">
+    <article className="profile">
+      <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link to="/">دليل الجامعات</Link>
-        <span>/</span>
+        <span aria-hidden="true">/</span>
         <span>{uni.name}</span>
-      </div>
-      <section className="university-header">
-        <div className="university-identity">
-          <UniversityLogo university={uni} />
-          <div>
-            <span className="badge">{uni.type}</span>
-            <h1>{uni.name}</h1>
-            <p>
-              <MapPin size={17} />
-              {[uni.city, uni.region].filter(Boolean).join("، ")}
-            </p>
-          </div>
+      </nav>
+      <header className="profile-header">
+        <UniversityLogo university={uni} />
+        <div className="profile-id">
+          <h1>{uni.name}</h1>
+          <p className="profile-meta">
+            {uni.type && <span className="badge">{uni.type}</span>}
+            {(uni.city || uni.region) && (
+              <span>
+                <MapPin size={15} />
+                {place(uni.city, uni.region)}
+              </span>
+            )}
+          </p>
         </div>
-        <div className="actions">
+        <div className="profile-actions">
           <FavoriteButton kind="university" id={id} label={uni.name} />
-          {safeUrl(uni.website_url) && (
-            <a
-              className="btn secondary"
-              href={safeUrl(uni.website_url)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              الموقع الرسمي <ExternalLink size={16} />
+          {safeUrl(web) && (
+            <a className="btn secondary compact" href={safeUrl(web)} target="_blank" rel="noreferrer">
+              موقع الجامعة <ExternalLink size={14} />
             </a>
           )}
         </div>
-      </section>
-      <nav className="tabs" aria-label="أقسام الجامعة">
-        {[
-          ["overview", "عن الجامعة"],
-          ["programs", "التخصصات"],
-          ["admission", "مسارات القبول"],
-          ["calculator", "حاسبة الموزونة"],
-          ["cutoffs", "النسب السابقة"],
-        ].map(([key, label]) => (
-          <button
-            key={key}
-            aria-current={tab === key ? "page" : undefined}
-            className={tab === key ? "active" : ""}
-            onClick={() => setParams({ tab: key })}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-      <ErrorBoundary key={tab}>
-        {tab === "overview" ? (
-          <div className="detail-grid">
-            <section className="panel">
-              <div className="section-title">
-                <BookOpen />
-                <h2>الجامعة في لمحة</h2>
-              </div>
-              <p className="prewrap">
-                {uni.description || "لم تُضف نبذة الجامعة بعد."}
-              </p>
-              <Source url={uni.source_url} verified={uni.verified_on} />
-              {sections.isPending ? (
-                <Loading />
-              ) : sections.error ? (
-                <ErrorState
-                  error={sections.error}
-                  retry={() => sections.refetch()}
-                />
-              ) : (
-                sections.data
-                  ?.filter(
-                    (s) =>
-                      s.feature_key !== "historical_cutoffs" ||
-                      canViewCutoffSections,
-                  )
-                  .map((s) => (
-                    <section className="detail-section" key={s.id}>
-                      <h3>{s.title}</h3>
-                      <p className="prewrap">{s.content}</p>
-                      <Source url={s.source_url} verified={s.verified_on} />
-                    </section>
-                  ))
-              )}
-            </section>
-            <aside>
-              <section className="panel housing-panel">
-                <Building2 />
-                <h2>السكن الجامعي</h2>
-                <strong>{housing(uni.housing_status)}</strong>
-                <p>{uni.housing_note}</p>
-                <Source
-                  url={uni.housing_source_url}
-                  verified={uni.housing_verified_on}
-                />
-              </section>
-              <section className="panel mini-cta">
-                <Calculator />
-                <h3>وين توصل موزونتك؟</h3>
-                <p>احسب نسبتك وفق المسارات المنشورة للجامعة.</p>
-                <button
-                  className="btn primary"
-                  onClick={() => setParams({ tab: "calculator" })}
-                >
-                  احسب الآن
-                </button>
-              </section>
-            </aside>
-          </div>
-        ) : tab === "programs" ? (
-          <section className="panel">
-            <div className="section-title">
-              <GraduationCap />
-              <h2>التخصصات والكليات</h2>
-            </div>
-            <input
-              aria-label="ابحث عن تخصص"
-              type="search"
-              placeholder="اسم التخصص أو الكلية"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {programs.isPending ? (
-              <Loading />
-            ) : programs.error ? (
-              <ErrorState
-                error={programs.error}
-                retry={() => programs.refetch()}
-              />
-            ) : !filtered.length ? (
-              <Empty title="لا توجد تخصصات مطابقة" />
-            ) : (
-              colleges.map((c) => (
-                <section className="program-group" key={c}>
-                  <h3>{c}</h3>
-                  <div className="program-grid">
-                    {filtered
-                      .filter((p) => (p.college || "تخصصات أخرى") === c)
-                      .map((p) => (
-                        <article key={p.id} className="program-item">
-                          <div>
-                            <h4>{p.name}</h4>
-                            <p>
-                              {[p.degree, p.gender, p.campus]
-                                .filter(Boolean)
-                                .join(" · ")}
-                            </p>
-                            {p.admission_route && (
-                              <small>{p.admission_route}</small>
-                            )}
-                          </div>
-                          <FavoriteButton
-                            kind="program"
-                            id={p.id}
-                            label={p.name}
-                          />
-                        </article>
-                      ))}
-                  </div>
-                </section>
-              ))
-            )}
-          </section>
-        ) : tab === "admission" ? (
-          <section className="panel">
-            <h2>مسارات القبول</h2>
-            {tracks.isPending ? (
-              <Loading />
-            ) : tracks.error ? (
-              <ErrorState error={tracks.error} retry={() => tracks.refetch()} />
-            ) : !tracks.data?.length ? (
-              <Empty title="لم تُضف مسارات القبول بعد" />
-            ) : (
-              tracks.data.map((t) => (
-                <article className="track" key={t.id}>
-                  <div className="row-between">
-                    <h3>{t.name}</h3>
-                    <span className="badge">{t.academic_year}</span>
-                  </div>
-                  <p>{t.gender}</p>
-                  <div className="weights">
-                    <span>
-                      الثانوية <b>{t.school_weight}%</b>
-                    </span>
-                    <span>
-                      القدرات <b>{t.aptitude_weight}%</b>
-                    </span>
-                    <span>
-                      التحصيلي <b>{t.achievement_weight}%</b>
-                    </span>
-                  </div>
-                  <p className="prewrap">{t.requirements}</p>
-                  <Source url={t.source_url} verified={t.verified_on} />
-                </article>
-              ))
-            )}
-          </section>
-        ) : tab === "calculator" ? (
-          tracks.isPending ? (
-            <Loading />
-          ) : tracks.error ? (
-            <ErrorState error={tracks.error} retry={() => tracks.refetch()} />
-          ) : (
-            <CalculatorForm tracks={tracks.data || []} universityId={id} />
-          )
-        ) : tab === "cutoffs" ? (
-          <section className="panel">
-            <h2>نسب القبول السابقة</h2>
-            <Cutoffs id={id} />
-          </section>
-        ) : (
-          <Empty title="القسم غير موجود" />
-        )}
-      </ErrorBoundary>
-    </>
+      </header>
+      {contentError && (
+        <ErrorState
+          error={contentError}
+          retry={() => {
+            void programs.refetch();
+            void tracks.refetch();
+            void sections.refetch();
+          }}
+        />
+      )}
+      {blocks}
+      {loadingContent && <Loading />}
+      {!loadingContent && !contentError && blocks.length === 1 && (
+        <p className="muted">لم تُنشر تفاصيل هذه الجامعة بعد.</p>
+      )}
+    </article>
   );
 }

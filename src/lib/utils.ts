@@ -21,7 +21,7 @@ export const housing = (v: string) =>
     available: "يتوفر سكن",
     limited: "سكن بشروط",
     unavailable: "لا يتوفر سكن",
-  })[v] || "غير محدد";
+  })[v] || "";
 export const date = (s: string | null | undefined) => {
   if (!s) return "غير محدد";
   const d = new Date(s);
@@ -31,6 +31,31 @@ export const date = (s: string | null | undefined) => {
         dateStyle: "medium",
         calendar: "gregory",
       }).format(d);
+};
+// A weighted track has explicit numeric weights totalling 100%. Anything else
+// (SAT, olympiad, conditional admission) is a textual track: never calculated.
+export const isWeighted = (
+  t: Pick<Track, "school_weight" | "aptitude_weight" | "achievement_weight">,
+) => {
+  const w = [t.school_weight, t.aptitude_weight, t.achievement_weight].map(
+    Number,
+  );
+  return (
+    w.every((x) => Number.isFinite(x) && x >= 0 && x <= 100) &&
+    Math.abs(w.reduce((a, b) => a + b, 0) - 100) <= 0.01
+  );
+};
+export const hostOf = (v: unknown) => {
+  const u = safeUrl(v);
+  return u ? new URL(u).hostname.replace(/^www\./, "") : "";
+};
+// "مكة المكرمة، منطقة مكة المكرمة" → "مكة المكرمة": avoid repeating the city.
+export const place = (city?: string, region?: string) => {
+  const c = (city || "").trim();
+  const r = (region || "").trim();
+  if (!c) return r;
+  if (!r || normalize(r).includes(normalize(c))) return c;
+  return c + "، " + r;
 };
 export const number = (v: number) => new Intl.NumberFormat("ar-SA").format(v);
 export function calculate(
@@ -92,6 +117,12 @@ export function friendly(e: unknown) {
     /row.level.security|permission denied/i.test(m)
   )
     return "لا تملك الصلاحية المطلوبة لإكمال هذه العملية.";
+  if (/academic_year_check/.test(m))
+    return "حفظ مسار بلا عام أكاديمي يحتاج تطبيق تحديث القاعدة database/002_textual_tracks.sql أولًا.";
+  if (/publish_valid|source_required/.test(m))
+    return "لا يمكن نشر هذا السجل قبل إضافة رابط المصدر وتاريخ التحقق.";
+  if (err?.code === "23505" || /duplicate key/.test(m))
+    return "يوجد سجل مطابق مسبقًا (قد يكون في السلة).";
   if (["PGRST205", "42P01", "PGRST202"].includes(err?.code || ""))
     return "هذه الميزة غير مفعّلة بعد. يرجى التواصل مع إدارة مُوجّه.";
   if (/fetch|network|timeout/i.test(m))

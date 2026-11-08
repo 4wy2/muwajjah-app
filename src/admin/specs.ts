@@ -83,7 +83,9 @@ export const specs: Record<
     match: ["university_id", "name", "academic_year", "gender"],
     fields: [
       text("name", "اسم المسار", true),
-      text("academic_year", "العام الأكاديمي", true),
+      // Optional here: a textual track (SAT, olympiad…) may have no stated year.
+      // Weighted tracks are still required to carry one (validated in sanitize).
+      text("academic_year", "العام الأكاديمي"),
       text("gender", "الفئة"),
       ...weights,
       { key: "requirements", label: "شروط القبول", type: "textarea" },
@@ -187,6 +189,20 @@ export function sanitize(
         throw new Error("خيار غير صالح: " + f.label);
       result[f.key] = s;
     }
+  }
+  if (kind === "tracks" && !partial) {
+    const sum =
+      Number(result.school_weight) +
+      Number(result.aptitude_weight) +
+      Number(result.achievement_weight);
+    if (sum !== 0 && Math.abs(sum - 100) > 0.01)
+      throw new Error(
+        `مجموع الأوزان ${sum}%؛ يجب أن يكون 100% أو صفرًا لمسار نصي.`,
+      );
+    if (sum !== 0 && !String(result.academic_year || "").trim())
+      throw new Error("المسار الموزون يحتاج العام الأكاديمي.");
+    if (sum === 0 && !String(result.requirements || "").trim())
+      throw new Error("المسار النصي يحتاج كتابة شروط القبول.");
   }
   if (kind !== "universities") {
     if (!raw.university_id && !partial) throw new Error("اختر الجامعة.");

@@ -78,7 +78,7 @@ export default function AdminApp() {
         <ErrorBoundary key={location.pathname}>
           <Suspense fallback={<Loading />}>
             <Routes>
-              {["login", "forgot", "reset", "callback"].map((mode) => (
+              {["login", "signup", "forgot", "reset", "callback"].map((mode) => (
                 <Route
                   key={mode}
                   path={mode}

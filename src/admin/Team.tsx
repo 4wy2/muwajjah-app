@@ -29,7 +29,26 @@ export default function Team() {
   const q = useQuery({
     queryKey: ["team"],
     enabled: member.is_owner,
-    queryFn: () => rpc<TeamMember[]>("guide_list_team"),
+    // Prefer the directory (includes names); fall back on older databases.
+    queryFn: () =>
+      rpc<TeamMember[]>("guide_team_directory").catch((e) => {
+        if (e?.code === "PGRST202") return rpc<TeamMember[]>("guide_list_team");
+        throw e;
+      }),
+  });
+  const pending = useQuery({
+    queryKey: ["team-pending"],
+    enabled: member.is_owner,
+    queryFn: () =>
+      rpc<
+        {
+          user_id: string;
+          email: string;
+          display_name: string;
+          registered_at: string;
+          email_confirmed: boolean;
+        }[]
+      >("guide_pending_signups"),
   });
   const unis = useAdminRows("universities");
   const [editing, setEditing] = useState<TeamMember | null | undefined>();
@@ -54,6 +73,48 @@ export default function Team() {
           إضافة مساهم
         </button>
       </PageHeading>
+      {pending.data && pending.data.length > 0 && (
+        <section className="panel">
+          <h2>طلبات انضمام بانتظار اعتمادك ({pending.data.length})</h2>
+          <ul className="pending-list">
+            {pending.data.map((p) => (
+              <li key={p.user_id}>
+                <div>
+                  <strong>{p.display_name}</strong>
+                  <small className="block muted" dir="ltr">
+                    {p.email}
+                  </small>
+                  <small className="muted">
+                    {p.email_confirmed ? "البريد مؤكد" : "لم يؤكد بريده بعد"}
+                  </small>
+                </div>
+                <button
+                  className="btn secondary compact"
+                  onClick={() => {
+                    setError("");
+                    setEditing({
+                      user_id: "",
+                      display_name: p.display_name,
+                      email: p.email,
+                      is_enabled: true,
+                      can_edit: true,
+                      can_publish: false,
+                      can_delete: false,
+                      university_ids: [],
+                    });
+                  }}
+                >
+                  مراجعة واعتماد
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">
+            الاعتماد يفتح نموذج الصلاحيات؛ لا يحصل المساهم على أي وصول قبل حفظه.
+            تجاهل الطلب يبقيه بلا صلاحية.
+          </p>
+        </section>
+      )}
       <section className="panel">
         {q.isPending ? (
           <Loading />
@@ -145,6 +206,9 @@ export default function Team() {
                   assigned_ids: f.getAll("university"),
                 });
                 await queryClient.invalidateQueries({ queryKey: ["team"] });
+                await queryClient.invalidateQueries({
+                  queryKey: ["team-pending"],
+                });
                 setEditing(undefined);
                 toast("تم حفظ صلاحيات المساهم");
               } catch (err) {
@@ -170,7 +234,7 @@ export default function Team() {
                 dir="ltr"
                 required
                 defaultValue={editing?.email}
-                readOnly={!!editing}
+                readOnly={!!editing?.email}
               />
             </Field>
             <div className="choices">

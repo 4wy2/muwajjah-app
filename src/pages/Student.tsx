@@ -10,7 +10,13 @@ import {
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "../auth/AuthProvider";
-import { useFavorites, useProfile, useScores, usePlus } from "../api/student";
+import {
+  useFavorites,
+  useProfile,
+  useScores,
+  usePlus,
+  useCommercialVisible,
+} from "../api/student";
 import { useCatalog } from "../api/catalog";
 import { allRows, db, queryClient } from "../api/client";
 import { usePreferences } from "../lib/store";
@@ -26,6 +32,7 @@ import UniversityCard, { FavoriteButton } from "../components/UniversityCard";
 import type { Program } from "../lib/types";
 import { date, friendly } from "../lib/utils";
 export default function Student() {
+  const commercial = useCommercialVisible();
   return (
     <div className="workspace">
       <aside className="workspace-nav">
@@ -38,7 +45,9 @@ export default function Student() {
             ["scores", "سجل الموزونة", Calculator],
             ["subscription", "اشتراكي", Crown],
             ["settings", "الإعدادات", Settings],
-          ].map(([route, label, Icon]) => {
+          ]
+            .filter(([route]) => route !== "subscription" || commercial)
+            .map(([route, label, Icon]) => {
             const I = Icon as typeof Star;
             return (
               <NavLink to={"/student/" + route} key={String(route)}>
@@ -61,6 +70,7 @@ export function Dashboard() {
   const scores = useScores();
   const favorites = useFavorites();
   const plus = usePlus();
+  const commercial = useCommercialVisible();
   return (
     <>
       <PageHeading
@@ -86,13 +96,15 @@ export function Dashboard() {
             {scores.data?.[0] ? scores.data[0].result + "%" : "—"}
           </strong>
         </Link>
-        <Link to="/student/subscription" className="stat-card purple">
-          <Crown />
-          <span>حالة الحساب</span>
-          <strong>
-            {plus.isSuccess ? (plus.data ? "بلس" : "مجاني") : "—"}
-          </strong>
-        </Link>
+        {commercial && (
+          <Link to="/student/subscription" className="stat-card purple">
+            <Crown />
+            <span>حالة الحساب</span>
+            <strong>
+              {plus.isSuccess ? (plus.data ? "بلس" : "مجاني") : "—"}
+            </strong>
+          </Link>
+        )}
       </div>
       {[profile, scores, favorites, plus].some((q) => q.error) && (
         <p className="notice">
@@ -269,6 +281,8 @@ export function Scores() {
 }
 export function Subscription() {
   const q = usePlus();
+  const commercial = useCommercialVisible();
+  if (q.isSuccess && !commercial) return <Navigate to="/student/dashboard" replace />;
   return (
     <>
       <PageHeading title="اشتراكي" />

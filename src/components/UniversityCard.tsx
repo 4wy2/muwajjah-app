@@ -5,11 +5,10 @@ import {
   Star,
   GitCompareArrows,
   GraduationCap,
-  ArrowLeft,
   Building2,
 } from "lucide-react";
 import type { University } from "../lib/types";
-import { safeUrl, friendly, housing } from "../lib/utils";
+import { safeUrl, friendly, housing, place } from "../lib/utils";
 import { useAuth } from "../auth/AuthProvider";
 import { useFavorites, useToggleFavorite } from "../api/student";
 import { usePreferences } from "../lib/store";
@@ -94,45 +93,48 @@ const UniversityCard = memo(function UniversityCard({
   const selected = usePreferences((s) => s.comparison.includes(u.id));
   const toggle = usePreferences((s) => s.toggleCompare);
   const toast = useToast();
+  const where = place(u.city, u.region);
+  const housingLabel = housing(u.housing_status);
   return (
     <article className="university-card">
       <div className="card-top">
         <UniversityLogo university={u} />
         <FavoriteButton kind="university" id={u.id} label={u.name} />
       </div>
-      <span className={"badge " + (/أهل|خاص/.test(u.type) ? "private" : "")}>
-        {u.type || "جامعة"}
-      </span>
-      <Link className="card-title" to={"/universities/" + u.id}>
+      <Link className="card-title stretched" to={"/universities/" + u.id}>
         <h3>{u.name}</h3>
       </Link>
-      <p className="card-location">
-        <MapPin size={15} />
-        {u.city || u.region || "الموقع غير محدد"}
-      </p>
+      {where && (
+        <p className="card-location">
+          <MapPin size={13} aria-hidden="true" />
+          {where}
+        </p>
+      )}
       <div className="card-facts">
-        <span>
-          <Building2 size={15} />
-          {housing(u.housing_status)}
-        </span>
-      </div>
-      <div className="card-bottom">
-        <Link to={"/universities/" + u.id}>
-          استكشف الجامعة <ArrowLeft size={17} />
-        </Link>
-        {compare && (
-          <button
-            className={selected ? "compare-button active" : "compare-button"}
-            onClick={() => {
-              if (!toggle(u.id)) toast("يمكن مقارنة 3 جامعات كحد أقصى.", true);
-            }}
-            aria-pressed={selected}
-          >
-            <GitCompareArrows size={16} />
-            {selected ? "أُضيفت" : "قارن"}
-          </button>
+        {u.type && (
+          <span className={"badge " + (/أهل|خاص/.test(u.type) ? "private" : "")}>
+            {u.type}
+          </span>
+        )}
+        {housingLabel && (
+          <span className="fact">
+            <Building2 size={13} aria-hidden="true" />
+            {housingLabel}
+          </span>
         )}
       </div>
+      {compare && (
+        <button
+          className={selected ? "compare-button active" : "compare-button"}
+          onClick={() => {
+            if (!toggle(u.id)) toast("يمكن مقارنة 3 جامعات كحد أقصى.", true);
+          }}
+          aria-pressed={selected}
+        >
+          <GitCompareArrows size={14} />
+          {selected ? "في المقارنة" : "قارن"}
+        </button>
+      )}
     </article>
   );
 });

@@ -6,6 +6,7 @@ import { rpc } from "../api/client";
 import {
   signIn,
   signUpStudent,
+  signUpContributor,
   sendRecovery,
   changePassword,
   signInWithGoogle,
@@ -60,7 +61,9 @@ export default function Auth({
   const title = reset
     ? "كلمة مرور جديدة"
     : signup
-      ? "ابدأ رحلتك مع مُوجّه"
+      ? admin
+        ? "طلب الانضمام لفريق المحتوى"
+        : "ابدأ رحلتك مع مُوجّه"
       : forgot
         ? "استعادة كلمة المرور"
         : admin
@@ -107,7 +110,9 @@ export default function Auth({
           {forgot
             ? "أدخل بريدك لنرسل لك رابط الاستعادة."
             : signup
-              ? "أنشئ حسابك واحفظ خياراتك الجامعية."
+              ? admin
+                ? "سجّل بياناتك، وسيراجع مالك مُوجّه طلبك ويحدد الجامعات والصلاحيات. التسجيل وحده لا يمنح أي وصول."
+                : "الحساب اختياري، ويحفظ لك المفضلة ونتائج الموزونة فقط. تصفح الجامعات متاح دون حساب."
               : reset
                 ? "اختر كلمة مرور قوية لحماية حسابك."
                 : admin
@@ -142,12 +147,14 @@ export default function Auth({
                 await sendRecovery(email, base + "/reset");
                 setMessage("إذا كان البريد مسجّلًا، ستصلك رسالة الاستعادة.");
               } else if (signup) {
-                await signUpStudent(
-                  email,
-                  password,
-                  String(form.get("name") || "").trim(),
+                const name = String(form.get("name") || "").trim();
+                if (admin) await signUpContributor(email, password, name);
+                else await signUpStudent(email, password, name);
+                setMessage(
+                  admin
+                    ? "أُرسل الطلب. أكّد بريدك من الرسالة المرسلة، ثم انتظر اعتماد المالك."
+                    : "راجع بريدك الإلكتروني لتأكيد حسابك.",
                 );
-                setMessage("راجع بريدك الإلكتروني لتأكيد حسابك.");
               } else {
                 await signIn(email, password);
               }
@@ -260,8 +267,10 @@ export default function Auth({
           </p>
         )}
         <div className="auth-links">
-          {!admin && !signup && !reset && (
-            <Link to="/auth/signup">إنشاء حساب جديد</Link>
+          {!signup && !reset && !forgot && (
+            <Link to={base + "/signup"}>
+              {admin ? "طلب الانضمام كمساهم" : "إنشاء حساب جديد"}
+            </Link>
           )}
           {(signup || forgot || reset) && (
             <Link to={base + "/login"}>تسجيل الدخول</Link>

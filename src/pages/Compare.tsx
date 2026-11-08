@@ -45,11 +45,11 @@ export default function Compare() {
       </Empty>
     );
   const rows = [
-    ["المدينة", (u: any) => u.city || "غير محدد"],
-    ["المنطقة", (u: any) => u.region || "غير محدد"],
-    ["نوع الجامعة", (u: any) => u.type || "غير محدد"],
-    ["السكن الجامعي", (u: any) => housing(u.housing_status)],
-    ["معلومات السكن", (u: any) => u.housing_note || "لم تُضف معلومات"],
+    ["المدينة", (u: any) => u.city || "—"],
+    ["المنطقة", (u: any) => u.region || "—"],
+    ["نوع الجامعة", (u: any) => u.type || "—"],
+    ["السكن الجامعي", (u: any) => housing(u.housing_status) || "—"],
+    ["معلومات السكن", (u: any) => u.housing_note || "—"],
     ["نبذة", (u: any) => u.description || "لم تُضف نبذة"],
   ] as const;
   return (

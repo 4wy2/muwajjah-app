@@ -18,6 +18,23 @@ export async function signUpStudent(
   });
   if (error) throw error;
 }
+// A contributor request is only a flag on the auth user. It grants nothing:
+// the owner must approve it from /admin/team (guide_set_member_details).
+export async function signUpContributor(
+  email: string,
+  password: string,
+  name: string,
+) {
+  const { error } = await db.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: location.origin + "/admin/callback",
+      data: { guide_name: name, guide_signup: true },
+    },
+  });
+  if (error) throw error;
+}
 export async function sendRecovery(email: string, resetPath: string) {
   const { error } = await db.auth.resetPasswordForEmail(email, {
     redirectTo: location.origin + resetPath,

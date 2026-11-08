@@ -126,3 +126,53 @@
     padding: 24px 20px;
   }
 }
+
+/* v2.1: university workspace and bundle import */
+.ws-back { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; margin-bottom: 8px; }
+.ws-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+.ws-head h1 { font-size: 22px; margin: 0 0 4px; }
+.ws-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+.ws-stat { text-align: start; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+.ws-stat > span { font-weight: 700; font-size: 14px; }
+.ws-counts { display: flex; flex-wrap: wrap; gap: 4px; }
+.ws-tabs { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.ws-tabs button { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 12px; font-weight: 700; color: var(--muted); white-space: nowrap; min-height: 44px; }
+.ws-tabs button.active { color: var(--accent); border-color: var(--accent); }
+.ws-body .page-heading { margin-bottom: 8px; }
+.upload-zone.compact { padding: 14px; min-height: 0; }
+.bundle-options { margin: 12px 0 4px; align-items: end; }
+.bundle-kind { border: 1px solid var(--line); border-radius: 10px; margin: 8px 0; background: var(--surface); }
+.bundle-kind > summary { cursor: pointer; padding: 10px 12px; font-weight: 700; display: flex; gap: 10px; align-items: center; }
+.bundle-rows { list-style: none; margin: 0; padding: 0 12px 8px; }
+.bundle-rows > li { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.bundle-rows .changes { flex-basis: 100%; margin: 0; padding-inline-start: 24px; font-size: 13px; color: var(--muted); }
+.bundle-rows del { background: #fdecec; color: #8e2a33; text-decoration: line-through; padding: 0 3px; border-radius: 3px; }
+.bundle-rows ins { background: #e7f6ec; color: #1f6b3a; text-decoration: none; padding: 0 3px; border-radius: 3px; }
+.row-msg { color: var(--danger); }
+.badge.st-new { background: #e7f6ec; color: #1f6b3a; }
+.badge.st-changed { background: #e8f0fe; color: #2a55a8; }
+.badge.st-review { background: #fff4d6; color: #8a6412; }
+.badge.st-error { background: #fdecec; color: #a2353f; }
+.badge.st-trashed, .badge.st-same { background: #eeeef2; color: #63616e; }
+.uncertain { background: #fff9e8; border: 1px solid #f0dfaa; border-radius: 10px; padding: 8px 12px; margin: 8px 0; }
+.uncertain summary { cursor: pointer; font-weight: 700; }
+.bundle-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+[data-theme="dark"] .uncertain { background: #3a3324; border-color: #5c4f2c; }
+[data-theme="dark"] .bundle-rows del { background: #43232d; color: #ffc1ce; }
+[data-theme="dark"] .bundle-rows ins { background: #243d33; color: #a5dfc5; }
+@media (max-width: 700px) { .ws-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.capacity-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.capacity-row strong { display: block; font-size: 22px; }
+.capacity-row p { flex: 1; min-width: 220px; margin: 0; }
+.cap-review { color: #a06a10; }
+.cap-act { color: var(--danger); }
+.archive-steps { display: grid; gap: 10px; padding-inline-start: 20px; margin: 12px 0; }
+.archive-steps .btn { margin-inline-start: 8px; }
+.audit-list { list-style: none; margin: 0; padding: 0; }
+.audit-list > li { border-top: 1px solid var(--line); padding: 10px 0; }
+.audit-head { display: flex; gap: 6px 12px; flex-wrap: wrap; align-items: baseline; }
+.audit-list .changes { font-size: 13px; color: var(--muted); padding-inline-start: 18px; margin: 4px 0 0; }
+.audit-list del { background: #fdecec; color: #8e2a33; padding: 0 3px; border-radius: 3px; }
+.audit-list ins { background: #e7f6ec; color: #1f6b3a; text-decoration: none; padding: 0 3px; border-radius: 3px; }
+.pending-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.pending-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { allRows, db, queryClient } from "./client";
+import { allRows, db, queryClient, rpc } from "./client";
 import { useAuth } from "../auth/AuthProvider";
 import type { Favorite, Score } from "../lib/types";
 export function useFavorites() {
@@ -135,4 +135,28 @@ export function usePlus() {
         | undefined;
     },
   });
+}
+// The subscription surface is shown only when it has meaning for this user:
+// they already hold Plus (granted manually by the owner), or the owner has
+// switched on the public offer for some feature (state "locked"). During the
+// silent free launch both are false, so no pricing/plus hints appear.
+export function useCommercialVisible() {
+  const { user } = useAuth();
+  const plus = usePlus();
+  const states = useQuery({
+    queryKey: ["commercial-states", user?.id || "guest"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const keys = ["historical_cutoffs", "comparison"];
+      const out = await Promise.all(
+        keys.map((k) =>
+          rpc<string>("guide_feature_state", { target_feature: k }).catch(
+            () => "hidden",
+          ),
+        ),
+      );
+      return out;
+    },
+  });
+  return !!plus.data || !!states.data?.includes("locked");
 }

@@ -1,18 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  SlidersHorizontal,
-  GraduationCap,
-  MapPin,
-  ArrowUpLeft,
-  Compass,
-} from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Search } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
 import { Empty, ErrorState, Loading, useDebounce } from "../components/ui";
 import UniversityCard from "../components/UniversityCard";
+
+// Search-first catalogue. Owner decision: no region filter, no program search,
+// no housing filter, no program counts on cards. Region stays visible as data.
 export default function Home() {
   const q = useCatalog();
   const { user } = useAuth();
@@ -21,17 +17,10 @@ export default function Home() {
   const [search, setSearch] = useState(params.get("q") || "");
   const term = useDebounce(search);
   const type = params.get("type") || "";
-  const region = params.get("region") || "";
-  const [limit, setLimit] = useState(12);
-  const [filters, setFilters] = useState(false);
+  const [limit, setLimit] = useState(24);
   const universities = q.data || [];
-  const regions = useMemo(
-    () =>
-      [...new Set(universities.map((u) => u.region).filter(Boolean))].sort(),
-    [q.data],
-  );
   const types = useMemo(
-    () => [...new Set(universities.map((u) => u.type).filter(Boolean))],
+    () => [...new Set(universities.map((u) => u.type).filter(Boolean))].sort(),
     [q.data],
   );
   const results = useMemo(
@@ -39,24 +28,15 @@ export default function Home() {
       universities.filter(
         (u) =>
           (!term ||
-            normalize(u.name + " " + u.city).includes(normalize(term))) &&
-          (!type || u.type === type) &&
-          (!region || u.region === region),
+            normalize(u.name + " " + u.city + " " + u.region).includes(
+              normalize(term),
+            )) &&
+          (!type || u.type === type),
       ),
-    [q.data, term, type, region],
+    [q.data, term, type],
   );
-  const update = (key: string, value: string) => {
-    setParams(
-      (p) => {
-        if (value) p.set(key, value);
-        else p.delete(key);
-        return p;
-      },
-      { replace: true },
-    );
-  };
   useEffect(() => {
-    setLimit(12);
+    setLimit(24);
     setParams(
       (p) => {
         if (term) p.set("q", term);
@@ -67,153 +47,97 @@ export default function Home() {
     );
   }, [term, setParams]);
   useEffect(() => {
-    if (
-      term.trim() &&
-      q.isSuccess &&
-      results.length === 0 &&
-      !type &&
-      !region
-    ) {
+    if (term.trim() && q.isSuccess && results.length === 0 && !type) {
       const t = setTimeout(() => void missingSearch(normalize(term)), 1000);
       return () => clearTimeout(t);
     }
-  }, [term, q.isSuccess, results.length, type, region]);
+  }, [term, q.isSuccess, results.length, type]);
+  const setType = (t: string) =>
+    setParams(
+      (p) => {
+        if (t) p.set("type", t);
+        else p.delete("type");
+        return p;
+      },
+      { replace: true },
+    );
   return (
-    <>
-      <div className="home-intro">
-        <div>
-          <span className="eyebrow">
-            <span className="tiny-line" /> دليلك للجامعات السعودية
-          </span>
-          <h1>
-            خطوتك الجاية، <span>أوضح.</span>
-          </h1>
-          <p>اكتشف الجامعات والتخصصات، واختر المسار المناسب لك.</p>
-        </div>
-        <div className="intro-counter">
-          <GraduationCap />
-          <strong>{q.isSuccess ? number(universities.length) : "—"}</strong>
-          <span>جامعة في الدليل</span>
-        </div>
+    <div className="catalog">
+      <div className="catalog-head">
+        <h1>دليل الجامعات السعودية</h1>
+        <p>معلومات القبول والتخصصات والسكن لكل جامعة، في مكان واحد.</p>
       </div>
-      <div className="catalog-layout">
-        <aside className={"filters " + (filters ? "mobile-open" : "")}>
-          <div className="filter-title">
-            <SlidersHorizontal size={19} />
-            <h2>حدّد خياراتك</h2>
-          </div>
-          <div className="filter-group">
-            <h3>نوع الجامعة</h3>
+      <div className="search-box">
+        <Search size={19} aria-hidden="true" />
+        <input
+          aria-label="ابحث باسم الجامعة أو المدينة"
+          type="search"
+          placeholder="ابحث باسم الجامعة أو المدينة"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </div>
+      <div className="results-bar">
+        {types.length > 1 && (
+          <div className="type-chips" role="group" aria-label="نوع الجامعة">
             {["", ...types].map((t) => (
-              <label className="choice" key={t}>
-                <input
-                  type="radio"
-                  name="type"
-                  checked={type === t}
-                  onChange={() => update("type", t)}
-                />
-                <span>{t || "جميع الجامعات"}</span>
-              </label>
+              <button
+                key={t || "all"}
+                className={"chip-btn" + (type === t ? " active" : "")}
+                aria-pressed={type === t}
+                onClick={() => setType(t)}
+              >
+                {t || "الكل"}
+              </button>
             ))}
           </div>
-          <div className="filter-group">
-            <h3>المنطقة</h3>
-            <select
-              aria-label="المنطقة"
-              value={region}
-              onChange={(e) => update("region", e.target.value)}
-            >
-              <option value="">كل المناطق</option>
-              {regions.map((r) => (
-                <option key={r}>{r}</option>
-              ))}
-            </select>
-          </div>
-          {(type || region || search) && (
+        )}
+        <span className="muted result-info" role="status">
+          {q.isSuccess ? number(results.length) + " جامعة" : ""}
+        </span>
+      </div>
+      {q.isPending ? (
+        <Loading />
+      ) : q.error ? (
+        <ErrorState error={q.error} retry={() => q.refetch()} />
+      ) : results.length === 0 ? (
+        <Empty title="لا توجد جامعات مطابقة">
+          <p>جرّب اسمًا آخر أو مدينة أخرى.</p>
+          {(term || type) && (
             <button
               className="text-btn"
               onClick={() => {
                 setSearch("");
                 setParams({});
-                setLimit(12);
               }}
             >
-              إعادة ضبط الفلاتر
+              عرض كل الجامعات
             </button>
           )}
-          <div className="sidebar-note">
-            <Compass size={26} />
-            <h3>كل الخيارات قدّامك</h3>
-            <p>احفظ الجامعات التي تهمك، وارجع لها في أي وقت.</p>
-            <Link to="/student/favorites">
-              اذهب إلى مفضلتي <ArrowUpLeft size={17} />
-            </Link>
+        </Empty>
+      ) : (
+        <>
+          <div className="university-grid">
+            {results.slice(0, limit).map((u) => (
+              <UniversityCard
+                university={u}
+                key={u.id}
+                compare={!!feature.data && feature.data !== "hidden"}
+              />
+            ))}
           </div>
-        </aside>
-        <section className="catalog-content" aria-label="الجامعات">
-          <div className="search-box">
-            <Search size={21} />
-            <input
-              aria-label="البحث باسم الجامعة أو المدينة"
-              type="search"
-              placeholder="ابحث باسم الجامعة أو المدينة…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <span className="search-hint">
-              <MapPin size={14} /> السعودية
-            </span>
-          </div>
-          <div className="results-bar">
-            <h2>
-              استكشف الجامعات{" "}
-              <span>{q.isSuccess ? number(results.length) : "—"}</span>
-            </h2>
-            <button
-              className="filter-toggle btn secondary compact"
-              onClick={() => setFilters(!filters)}
-            >
-              <SlidersHorizontal size={16} /> تصفية
-            </button>
-            <span className="muted result-info">مرتبة حسب الاسم</span>
-          </div>
-          {q.isPending ? (
-            <Loading />
-          ) : q.error ? (
-            <ErrorState error={q.error} retry={() => q.refetch()} />
-          ) : results.length === 0 ? (
-            <Empty title="ما لقينا جامعات مطابقة">
-              <p>جرّب اسمًا آخر أو غيّر خيارات التصفية.</p>
-            </Empty>
-          ) : (
-            <>
-              <div className="university-grid">
-                {results.slice(0, limit).map((u) => (
-                  <UniversityCard
-                    university={u}
-                    key={u.id}
-                    compare={!!feature.data && feature.data !== "hidden"}
-                  />
-                ))}
-              </div>
-              <div className="load-more">
-                <span role="status">
-                  عرض {number(Math.min(limit, results.length))} من{" "}
-                  {number(results.length)} جامعة
-                </span>
-                {limit < results.length && (
-                  <button
-                    className="btn secondary"
-                    onClick={() => setLimit((l) => l + 12)}
-                  >
-                    عرض المزيد
-                  </button>
-                )}
-              </div>
-            </>
+          {limit < results.length && (
+            <div className="load-more">
+              <button
+                className="btn secondary compact"
+                onClick={() => setLimit((l) => l + 24)}
+              >
+                عرض المزيد ({number(results.length - limit)})
+              </button>
+            </div>
           )}
-        </section>
-      </div>
-    </>
+        </>
+      )}
+    </div>
   );
 }
