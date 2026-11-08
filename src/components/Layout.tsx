@@ -89,6 +89,10 @@ export default function Layout() {
           مُوجّه
         </Link>
         <span>قرارك الجامعي يبدأ بمعرفة خياراتك.</span>
+        <nav className="footer-links" aria-label="روابط التذييل">
+          <Link to="/privacy">الخصوصية</Link>
+          <Link to="/admin/login">دخول فريق المحتوى</Link>
+        </nav>
         <small>© {new Date().getFullYear()} مُوجّه</small>
       </footer>
       {prefs.comparison.length > 0 &&

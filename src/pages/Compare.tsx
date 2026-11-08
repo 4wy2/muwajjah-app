@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { X, GitCompareArrows } from "lucide-react";
 import { useCatalog, useFeature } from "../api/catalog";
 import { usePreferences } from "../lib/store";
@@ -31,8 +31,8 @@ export default function Compare() {
         }}
       />
     );
-  if (feature.data === "hidden")
-    return <Empty title="المقارنة غير متاحة حاليًا" />;
+  // A hidden feature does not exist for visitors, even by direct URL.
+  if (feature.data === "hidden") return <Navigate to="/" replace />;
   if (feature.data === "locked")
     return (
       <Empty title="مقارنة الجامعات ضمن مزايا بلس">
@@ -50,7 +50,7 @@ export default function Compare() {
     ["نوع الجامعة", (u: any) => u.type || "—"],
     ["السكن الجامعي", (u: any) => housing(u.housing_status) || "—"],
     ["معلومات السكن", (u: any) => u.housing_note || "—"],
-    ["نبذة", (u: any) => u.description || "لم تُضف نبذة"],
+    ["نبذة", (u: any) => u.description || "—"],
   ] as const;
   return (
     <>

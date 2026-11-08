@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { MapPin, ExternalLink, Calculator, LockKeyhole } from "lucide-react";
+import { MapPin, ExternalLink, Calculator, LockKeyhole, Share2 } from "lucide-react";
 import {
   useUniversity,
   useUniversityContent,
@@ -438,6 +438,40 @@ function Housing({ uni }: { uni: Uni }) {
   );
 }
 
+// Students mostly share links over WhatsApp: use the phone's share sheet when
+// available, otherwise copy the link.
+function ShareButton({ name }: { name: string }) {
+  const toast = useToast();
+  return (
+    <button
+      className="icon-btn"
+      aria-label={"مشاركة صفحة " + name}
+      title="مشاركة"
+      onClick={async () => {
+        const url = location.href.split("#")[0];
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: name + " | مُوجّه", url });
+            return;
+          }
+          await navigator.clipboard.writeText(url);
+          toast("نُسخ رابط الصفحة");
+        } catch (e) {
+          if ((e as Error)?.name !== "AbortError") toast("تعذر النسخ. انسخ الرابط من شريط المتصفح.", true);
+        }
+      }}
+    >
+      <Share2 size={17} />
+    </button>
+  );
+}
+function setDescription(text: string) {
+  const el = document.querySelector('meta[name="description"]');
+  if (el) el.setAttribute("content", text);
+}
+const DEFAULT_DESCRIPTION =
+  "دليل الجامعات السعودية: التخصصات وشروط القبول ومساراته والسكن، مع حاسبة الموزونة.";
+
 export default function University() {
   const { id = "" } = useParams();
   const u = useUniversity(id);
@@ -452,10 +486,14 @@ export default function University() {
   useEffect(() => {
     if (u.data) {
       document.title = u.data.name + " | مُوجّه";
+      setDescription(
+        (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
+      );
       void interest("university", id);
     }
     return () => {
       document.title = "مُوجّه | دليلك للجامعة";
+      setDescription(DEFAULT_DESCRIPTION);
     };
   }, [id, u.data]);
   if (u.isPending) return <Loading />;
@@ -587,6 +625,7 @@ export default function University() {
         </div>
         <div className="profile-actions">
           <FavoriteButton kind="university" id={id} label={uni.name} />
+          <ShareButton name={uni.name} />
           {safeUrl(web) && (
             <a className="btn secondary compact" href={safeUrl(web)} target="_blank" rel="noreferrer">
               موقع الجامعة <ExternalLink size={14} />

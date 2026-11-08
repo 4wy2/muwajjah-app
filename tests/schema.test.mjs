@@ -211,3 +211,24 @@ describe("analytics", () => {
     expect(r).toEqual({ interest_rows: 1, search_rows: 0 });
   });
 });
+
+describe("migration 004: students delete their own saved scores", () => {
+  it("only the owner of a score can delete it, and only after 004", async () => {
+    await as(OWNER);
+    await q(`select guide_publish_university_with_content($1)`, [U]);
+    await as(STUDENT);
+    const [{ id }] = await q(
+      `insert into guide_student_scores(user_id,university_id,track_id,school,aptitude,achievement,result)
+       values($1,$2,$3,90,80,85,85) returning id`,
+      [STUDENT, U, Tw],
+    );
+    expect(await fails(`delete from guide_student_scores where id=$1`, [id])).toBe(true); // no grant before 004
+    await root();
+    await db.exec(file("004_student_score_delete.sql"));
+    await db.exec(file("004_student_score_delete.sql"));
+    await as(STUDENT2);
+    expect(await q(`delete from guide_student_scores where id=$1 returning id`, [id])).toEqual([]);
+    await as(STUDENT);
+    expect((await q(`delete from guide_student_scores where id=$1 returning id`, [id])).length).toBe(1);
+  });
+});

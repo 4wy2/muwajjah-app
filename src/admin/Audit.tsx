@@ -135,7 +135,7 @@ export default function Audit() {
                       </span>
                       <small className="muted">
                         <span dir="ltr">{e.actor_email || "النظام"}</span> ·{" "}
-                        {new Intl.DateTimeFormat("ar-SA", {
+                        {new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
                           dateStyle: "medium",
                           timeStyle: "short",
                           calendar: "gregory",

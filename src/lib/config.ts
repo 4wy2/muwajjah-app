@@ -10,3 +10,6 @@ export const projectConfig = {
 export const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 // Absolute URL inside the app, e.g. for Supabase auth redirects.
 export const appUrl = (path: string) => location.origin + BASE + path;
+
+// Optional public contact for privacy/account requests. Leave empty to hide it.
+export const CONTACT_EMAIL = "";

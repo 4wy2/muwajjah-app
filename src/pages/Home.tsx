@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
-import { Empty, ErrorState, Loading, useDebounce } from "../components/ui";
+import { Empty, ErrorState, useDebounce } from "../components/ui";
 import UniversityCard from "../components/UniversityCard";
 
 // Search-first catalogue. Owner decision: no region filter, no program search,
@@ -97,7 +97,15 @@ export default function Home() {
         </span>
       </div>
       {q.isPending ? (
-        <Loading />
+        <div className="university-grid" aria-busy="true" aria-label="جارٍ تحميل الجامعات">
+          {Array.from({ length: 8 }, (_, i) => (
+            <div className="university-card skeleton" key={i} aria-hidden="true">
+              <span className="sk sk-logo" />
+              <span className="sk sk-line" />
+              <span className="sk sk-line short" />
+            </div>
+          ))}
+        </div>
       ) : q.error ? (
         <ErrorState error={q.error} retry={() => q.refetch()} />
       ) : results.length === 0 ? (

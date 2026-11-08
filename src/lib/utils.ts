@@ -23,11 +23,11 @@ export const housing = (v: string) =>
     unavailable: "لا يتوفر سكن",
   })[v] || "";
 export const date = (s: string | null | undefined) => {
-  if (!s) return "غير محدد";
+  if (!s) return "—";
   const d = new Date(s);
   return Number.isNaN(d.getTime())
-    ? "غير محدد"
-    : new Intl.DateTimeFormat("ar-SA", {
+    ? "—"
+    : new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
         dateStyle: "medium",
         calendar: "gregory",
       }).format(d);
@@ -57,7 +57,7 @@ export const place = (city?: string, region?: string) => {
   if (!r || normalize(r).includes(normalize(c))) return c;
   return c + "، " + r;
 };
-export const number = (v: number) => new Intl.NumberFormat("ar-SA").format(v);
+export const number = (v: number) => new Intl.NumberFormat("ar-SA-u-nu-latn").format(v);
 export function calculate(
   track: Pick<
     Track,
