@@ -143,3 +143,34 @@ describe("profile helpers", () => {
     expect(d[0].status).toBe("same");
   });
 });
+
+import { assess } from "../src/admin/readiness";
+describe("data readiness", () => {
+  const uni = { id: "u", name: "جامعة", description: "نبذة", city: "مكة", published: true, housing_status: "unknown" };
+  it("flags a published university whose programs are all drafts (the Shaqra case)", () => {
+    const r = assess(uni, {
+      programs: [{ id: "p", university_id: "u", name: "هندسة", college: "الهندسة", published: false }],
+      tracks: [],
+      sections: [],
+    });
+    expect(r.ready).toBe(false); // no admission info
+    expect(r.checks.find((c) => c.key === "admission")!.ok).toBe(false);
+    expect(r.warnings[0]).toContain("كلها غير منشورة");
+  });
+  it("accepts a no-weights university with an admission section, and flags unsourced tracks", () => {
+    const ok = assess(uni, {
+      programs: [{ id: "p", university_id: "u", name: "طب", college: "الطب", published: true }],
+      tracks: [],
+      sections: [{ id: "s", university_id: "u", title: "شروط القبول", content: "مقابلة", feature_key: "general" }],
+    });
+    expect(ok.ready).toBe(true);
+    expect(ok.checks.find((c) => c.key === "calculator")!.core).toBe(false);
+    const bad = assess(uni, {
+      programs: [{ id: "p", university_id: "u", name: "طب", published: true }],
+      tracks: [{ id: "t", university_id: "u", name: "علمي", school_weight: 30, aptitude_weight: 30, achievement_weight: 40, source_url: "", verified_on: null }],
+      sections: [],
+    });
+    expect(bad.ready).toBe(false);
+    expect(bad.checks.find((c) => c.key === "sources")!.ok).toBe(false);
+  });
+});
