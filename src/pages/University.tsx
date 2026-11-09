@@ -33,6 +33,11 @@ import {
 import { groupSections, slotOrder, type SlotKey } from "../lib/sections";
 import type { Program, Track, Section, University as Uni } from "../lib/types";
 
+// Placeholders meaning "not stated" are stored honestly but never shown as data.
+const shown = (v?: string | null) => {
+  const s = (v || "").trim();
+  return s && !/^غير (محدد|محددة|مذكور)/.test(s) ? s : "";
+};
 // Shows a source link only when one exists. "موقع الجامعة" is used only when the
 // link points at the university's own website; nothing else is called official.
 export function Source({
@@ -182,7 +187,7 @@ export function CalculatorForm({
             >
               {weighted.map((t) => (
                 <option value={t.id} key={t.id}>
-                  {[t.name, t.gender, t.academic_year].filter(Boolean).join(" · ")}
+                  {[t.name, shown(t.gender), shown(t.academic_year)].filter(Boolean).join(" · ")}
                 </option>
               ))}
             </select>
@@ -259,7 +264,7 @@ function TrackItem({
     <article className="track">
       <div className="track-head">
         <h3>{t.name}</h3>
-        {[t.gender, t.academic_year].filter(Boolean).map((x) => (
+        {[shown(t.gender), shown(t.academic_year)].filter(Boolean).map((x) => (
           <span className="chip" key={x}>
             {x}
           </span>
