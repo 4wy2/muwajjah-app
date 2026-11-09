@@ -13,6 +13,7 @@ import {
   useDebounce,
 } from "../components/ui";
 import { date, friendly } from "../lib/utils";
+import { useOffer, type OfferSettings } from "../api/commerce";
 interface Student {
   user_id: string;
   email: string;
@@ -54,6 +55,7 @@ export default function Access() {
     queryFn: () =>
       rpc<Student[]>("guide_owner_students", { search_query: term }),
   });
+  const offer = useOffer();
   if (!member.is_owner) return <Empty title="إدارة الوصول متاحة للمالك فقط" />;
   return (
     <>
@@ -61,6 +63,31 @@ export default function Access() {
         title="بلس والوصول"
         description="إعداد الميزات وإدارة اشتراكات الطلاب."
       />
+      {offer.data && (
+        <OfferPanel
+          key={JSON.stringify(offer.data)}
+          offer={offer.data}
+          busy={busy}
+          onSave={(o) =>
+            setAction({
+              name: "guide_owner_set_offer",
+              args: {
+                enabled: o.commercial_enabled,
+                season_label: o.season_label,
+                price_text: o.price_text,
+                purchase_url: o.purchase_url.trim(),
+                season_ends_at: o.season_ends_at || null,
+                note: o.note,
+              },
+              description: o.commercial_enabled
+                ? "تشغيل الاشتراكات: ستظهر للزوار الأقفال وصفحة الاشتراك وشريط الإعلان لكل ميزة مدفوعة. متأكد؟"
+                : offer.data!.commercial_enabled
+                  ? "إيقاف الاشتراكات: ستختفي كل إشارات الاشتراك عن الزوار، ويبقى المشتركون الحاليون على اشتراكهم. متأكد؟"
+                  : "حفظ إعدادات العرض؟ الاشتراكات ستبقى مطفأة.",
+            })
+          }
+        />
+      )}
       <div className="panel">
         <h2>صلاحية الميزات</h2>
         {flags.isPending ? (
@@ -70,14 +97,18 @@ export default function Access() {
         ) : (
           flags.data
             ?.filter((f) =>
-              ["comparison", "historical_cutoffs"].includes(f.feature_key),
+              ["comparison", "historical_cutoffs", "program_search"].includes(
+                f.feature_key,
+              ),
             )
             .map((f) => (
               <div className="list-row" key={f.feature_key}>
                 <label htmlFor={f.feature_key}>
                   {f.feature_key === "comparison"
                     ? "مقارنة الجامعات"
-                    : "النسب السابقة"}
+                    : f.feature_key === "program_search"
+                      ? "البحث بالتخصص"
+                      : "النسب السابقة"}
                 </label>
                 <select
                   id={f.feature_key}
@@ -227,6 +258,25 @@ export default function Access() {
                       >
                         تفعيل / تمديد
                       </button>
+                      {offer.data?.season_ends_at && (
+                        <button
+                          className="text-btn"
+                          onClick={() =>
+                            setAction({
+                              name: "guide_owner_manage_plus",
+                              args: {
+                                target_user: s.user_id,
+                                operation: "season",
+                                days_count: 30,
+                                reason,
+                              },
+                              description: `تفعيل بلس للطالب ${s.display_name || s.email} حتى نهاية الموسم (${date(offer.data!.season_ends_at!)})؟`,
+                            })
+                          }
+                        >
+                          حتى نهاية الموسم
+                        </button>
+                      )}
                       {s.plus_until && (
                         <button
                           className="text-btn error-text"
@@ -273,6 +323,7 @@ export default function Access() {
                 "students",
                 "feature",
                 "plus",
+                "offer",
               ].map((k) => queryClient.invalidateQueries({ queryKey: [k] })),
             );
             setAction(null);
@@ -285,5 +336,90 @@ export default function Access() {
         }}
       />
     </>
+  );
+}
+
+function OfferPanel({
+  offer,
+  busy,
+  onSave,
+}: {
+  offer: OfferSettings;
+  busy: boolean;
+  onSave: (o: OfferSettings) => void;
+}) {
+  const [o, setO] = useState<OfferSettings>({
+    ...offer,
+    season_ends_at: offer.season_ends_at || "",
+  });
+  const set = (k: keyof OfferSettings, v: string | boolean) =>
+    setO((x) => ({ ...x, [k]: v }));
+  return (
+    <section className="panel">
+      <h2>الاشتراكات</h2>
+      <p className="muted">
+        الحالة الآن:{" "}
+        <strong>{offer.commercial_enabled ? "مشغّلة" : "مطفأة"}</strong>.{" "}
+        {offer.commercial_enabled
+          ? "الزوار يشوفون الأقفال وصفحة الاشتراك وشريط الإعلان."
+          : "ما يظهر للزوار أي إشارة للاشتراك، والمشتركون الحاليون يستخدمون المزايا عادي."}
+      </p>
+      <div className="admin-filters">
+        <Field label="اسم الموسم">
+          <input
+            value={o.season_label}
+            maxLength={80}
+            placeholder="مثل: موسم قبول 1448"
+            onChange={(e) => set("season_label", e.target.value)}
+          />
+        </Field>
+        <Field label="السعر كما يظهر للطالب">
+          <input
+            value={o.price_text}
+            maxLength={80}
+            placeholder="مثل: 29 ريال"
+            onChange={(e) => set("price_text", e.target.value)}
+          />
+        </Field>
+        <Field label="نهاية الموسم">
+          <input
+            type="date"
+            value={o.season_ends_at || ""}
+            onChange={(e) => set("season_ends_at", e.target.value)}
+          />
+        </Field>
+        <Field label="رابط منتج الاشتراك في متجرك (اختياري)">
+          <input
+            dir="ltr"
+            value={o.purchase_url}
+            placeholder="https://"
+            onChange={(e) => set("purchase_url", e.target.value)}
+          />
+        </Field>
+        <Field label="ملاحظة للطالب (مثل طريقة التحويل)">
+          <input
+            value={o.note}
+            maxLength={500}
+            onChange={(e) => set("note", e.target.value)}
+          />
+        </Field>
+      </div>
+      <div className="row-actions">
+        <button
+          className="btn secondary compact"
+          disabled={busy}
+          onClick={() => onSave({ ...o, commercial_enabled: offer.commercial_enabled })}
+        >
+          حفظ الإعدادات
+        </button>
+        <button
+          className={"btn compact " + (offer.commercial_enabled ? "danger" : "primary")}
+          disabled={busy}
+          onClick={() => onSave({ ...o, commercial_enabled: !offer.commercial_enabled })}
+        >
+          {offer.commercial_enabled ? "إيقاف الاشتراكات" : "تشغيل الاشتراكات"}
+        </button>
+      </div>
+    </section>
   );
 }

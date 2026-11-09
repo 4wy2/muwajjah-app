@@ -1,3 +1,4 @@
+import { useOffer } from "./commerce";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { allRows, db, queryClient, rpc } from "./client";
 import { useAuth } from "../auth/AuthProvider";
@@ -147,7 +148,7 @@ export function useCommercialVisible() {
     queryKey: ["commercial-states", user?.id || "guest"],
     staleTime: 60_000,
     queryFn: async () => {
-      const keys = ["historical_cutoffs", "comparison"];
+      const keys = ["historical_cutoffs", "comparison", "program_search"];
       const out = await Promise.all(
         keys.map((k) =>
           rpc<string>("guide_feature_state", { target_feature: k }).catch(
@@ -158,7 +159,12 @@ export function useCommercialVisible() {
       return out;
     },
   });
-  return !!plus.data || !!states.data?.includes("locked");
+  const offer = useOffer();
+  return (
+    !!plus.data ||
+    !!offer.data?.commercial_enabled ||
+    !!states.data?.includes("locked")
+  );
 }
 
 // Requires database/004_student_score_delete.sql (delete policy). Without it

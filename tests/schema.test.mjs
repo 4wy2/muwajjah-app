@@ -232,3 +232,75 @@ describe("migration 004: students delete their own saved scores", () => {
     expect((await q(`delete from guide_student_scores where id=$1 returning id`, [id])).length).toBe(1);
   });
 });
+
+describe("migration 005: subscriptions switch, program search, season and pending Plus", () => {
+  it("applies twice, keeps search hidden until the switch, then sells it", async () => {
+    await root();
+    await db.exec(file("005_commerce.sql"));
+    await db.exec(file("005_commerce.sql"));
+    // Program P1 ('هندسة') is published in U by the publication tests.
+    await as(null);
+    expect(await fails(`select * from guide_search_programs('هندسة')`)).toBe(true);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("hidden");
+    await as(STUDENT);
+    expect(await fails(`select guide_owner_set_offer(true,'1447','29 ريال','https://zid.store/x','2099-01-01','')`)).toBe(true);
+    expect(await fails(`update guide_offer_settings set commercial_enabled=true`)).toBe(true);
+    await as(OWNER);
+    expect(await fails(`select guide_owner_set_offer(true,'','','',null,'')`)).toBe(true); // needs season end
+    expect(await fails(`select guide_owner_set_offer(false,'','','http://bad','2099-01-01','')`)).toBe(true);
+    await q(`select guide_owner_set_offer(true,'موسم 1447','29 ريال','https://zid.store/x','2099-01-01','')`);
+    await as(null);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("locked");
+    expect((await q(`select price_text from guide_offer_settings`))[0].price_text).toBe("29 ريال");
+    expect(await fails(`select * from guide_search_programs('هندسة')`)).toBe(true);
+    // Switching off hides every offer again.
+    await as(OWNER);
+    await q(`select guide_owner_set_offer(false,'موسم 1447','29 ريال','https://zid.store/x','2099-01-01','')`);
+    await as(null);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("hidden");
+  });
+  it("season grant runs to the season end and unlocks search for that student only", async () => {
+    await as(OWNER);
+    await q(`select guide_owner_set_offer(true,'موسم','','', '2099-01-01','')`);
+    const [{ e }] = await q(`select guide_owner_manage_plus($1,'season',0,'تحويل') e`, [STUDENT2]);
+    expect(new Date(e).getUTCFullYear()).toBe(2099);
+    await as(STUDENT2);
+    const rows = await q(`select program_name, university_name from guide_search_programs('هند')`);
+    expect(rows.map((r) => r.program_name)).toEqual(["هندسة"]);
+    await as(STUDENT);
+    expect(await fails(`select * from guide_search_programs('هند')`)).toBe(true);
+  });
+  it("a payment made before signing up is claimed once by the confirmed email owner", async () => {
+    await root();
+    await db.exec(`update auth.users set email_confirmed_at=now() where id='${STUDENT}';
+      insert into guide_pending_plus(email,external_order_id,expires_at) values('s1@x.sa','Z-1','2099-01-02');`);
+    await as(STUDENT2);
+    expect((await q(`select guide_claim_pending_plus() n`))[0].n).toBe(0);
+    await as(STUDENT);
+    expect(await fails(`select * from guide_pending_plus`)).toBe(true); // not readable by students
+    expect((await q(`select guide_claim_pending_plus() n`))[0].n).toBe(1);
+    expect((await q(`select guide_claim_pending_plus() n`))[0].n).toBe(0);
+    expect((await q(`select guide_has_plus() p`))[0].p).toBe(true);
+  });
+});
+
+describe("migration 006: Zid paid orders", () => {
+  it("only the server role can grant; grants once, holds unknown buyers, revokes on refund", async () => {
+    await root();
+    await db.exec(`do $$ begin if not exists(select 1 from pg_roles where rolname='service_role') then create role service_role; end if; end $$;
+      grant usage on schema public, auth to service_role;`);
+    await db.exec(file("006_zid_orders.sql"));
+    await db.exec(file("006_zid_orders.sql"));
+    await as(STUDENT2);
+    expect(await fails(`select guide_service_zid_order('Z-9','s2@x.sa',true)`)).toBe(true);
+    await root();
+    await db.exec(`update auth.users set email_confirmed_at=now() where id='${STUDENT2}'`);
+    await db.exec("set role service_role");
+    expect((await q(`select guide_service_zid_order('Z-9','S2@x.sa ',true) r`))[0].r).toBe("granted");
+    expect((await q(`select guide_service_zid_order('Z-9','s2@x.sa',true) r`))[0].r).toBe("duplicate");
+    expect((await q(`select guide_service_zid_order('Z-10','new@x.sa',true) r`))[0].r).toBe("pending");
+    expect((await q(`select guide_service_zid_order('Z-9','',false) r`))[0].r).toBe("revoked");
+    await root();
+    expect((await q(`select count(*)::int n from guide_plus_entitlements where external_order_id='Z-9' and revoked_at is not null`))[0].n).toBe(1);
+  });
+});

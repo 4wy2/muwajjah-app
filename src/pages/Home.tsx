@@ -1,23 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Search, Lock } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useProgramSearch } from "../api/commerce";
 import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
 import { Empty, ErrorState, useDebounce } from "../components/ui";
 import UniversityCard from "../components/UniversityCard";
 
-// Search-first catalogue. Owner decision: no region filter, no program search,
-// no housing filter, no program counts on cards. Region stays visible as data.
+// Search-first catalogue. Owner decisions: no region filter, no housing filter,
+// no program counts on cards. Searching by major is a paid feature
+// (program_search): hidden while subscriptions are off, locked when they are on.
 export default function Home() {
   const q = useCatalog();
   const { user } = useAuth();
   const feature = useFeature("comparison", user?.id);
+  const majorFeature = useFeature("program_search", user?.id);
+  const majorState = majorFeature.data || "hidden";
   const [params, setParams] = useSearchParams();
+  const mode = params.get("by") === "major" && majorState !== "hidden" ? "major" : "uni";
   const [search, setSearch] = useState(params.get("q") || "");
   const term = useDebounce(search);
   const type = params.get("type") || "";
   const [limit, setLimit] = useState(24);
+  const canSearchMajor = majorState === "free" || majorState === "plus";
+  const majors = useProgramSearch(term, mode === "major" && canSearchMajor);
+  const setMode = (m: string) =>
+    setParams(
+      (p) => {
+        if (m === "major") p.set("by", "major");
+        else p.delete("by");
+        return p;
+      },
+      { replace: true },
+    );
   const universities = q.data || [];
   const types = useMemo(
     () => [...new Set(universities.map((u) => u.type).filter(Boolean))].sort(),
@@ -47,11 +63,11 @@ export default function Home() {
     );
   }, [term, setParams]);
   useEffect(() => {
-    if (term.trim() && q.isSuccess && results.length === 0 && !type) {
+    if (mode === "uni" && term.trim() && q.isSuccess && results.length === 0 && !type) {
       const t = setTimeout(() => void missingSearch(normalize(term)), 1000);
       return () => clearTimeout(t);
     }
-  }, [term, q.isSuccess, results.length, type]);
+  }, [term, q.isSuccess, results.length, type, mode]);
   const setType = (t: string) =>
     setParams(
       (p) => {
@@ -67,16 +83,49 @@ export default function Home() {
         <h1>دليل الجامعات السعودية</h1>
         <p>معلومات القبول والتخصصات والسكن لكل جامعة، في مكان واحد.</p>
       </div>
+      {majorState !== "hidden" && (
+        <div className="search-modes" role="tablist" aria-label="نوع البحث">
+          <button
+            role="tab"
+            aria-selected={mode === "uni"}
+            className={"chip-btn" + (mode === "uni" ? " active" : "")}
+            onClick={() => setMode("uni")}
+          >
+            الجامعات
+          </button>
+          <button
+            role="tab"
+            aria-selected={mode === "major"}
+            className={"chip-btn" + (mode === "major" ? " active" : "")}
+            onClick={() => setMode("major")}
+          >
+            {!canSearchMajor && <Lock size={14} aria-hidden="true" />} التخصصات
+          </button>
+        </div>
+      )}
       <div className="search-box">
         <Search size={19} aria-hidden="true" />
         <input
-          aria-label="ابحث باسم الجامعة أو المدينة"
+          aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
           type="search"
-          placeholder="ابحث باسم الجامعة أو المدينة"
+          placeholder={
+            mode === "major"
+              ? "اكتب التخصص، مثل: تمريض، هندسة كهربائية"
+              : "ابحث باسم الجامعة أو المدينة"
+          }
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
+      {mode === "major" && (
+        <MajorResults
+          term={term}
+          allowed={canSearchMajor}
+          query={majors}
+        />
+      )}
+      {mode === "uni" && (
+      <>
       <div className="results-bar">
         {types.length > 1 && (
           <div className="type-chips" role="group" aria-label="نوع الجامعة">
@@ -146,6 +195,79 @@ export default function Home() {
           )}
         </>
       )}
+      </>
+      )}
     </div>
+  );
+}
+
+function MajorResults({
+  term,
+  allowed,
+  query,
+}: {
+  term: string;
+  allowed: boolean;
+  query: ReturnType<typeof useProgramSearch>;
+}) {
+  if (!allowed)
+    return (
+      <div className="panel locked-panel">
+        <Lock size={28} aria-hidden="true" />
+        <h2>البحث بالتخصص من مزايا مُوجّه بلس</h2>
+        <p>اكتب التخصص اللي تبيه، وتطلع لك كل الجامعات اللي تدرّسه في مكان واحد.</p>
+        <Link className="btn primary" to="/student/subscription">
+          اعرف أكثر عن الاشتراك
+        </Link>
+      </div>
+    );
+  if (term.trim().length < 2)
+    return <p className="muted result-info">اكتب حرفين على الأقل من اسم التخصص.</p>;
+  if (query.isPending) return <p className="muted result-info">جارٍ البحث…</p>;
+  if (query.error) return <ErrorState error={query.error} retry={() => query.refetch()} />;
+  const rows = query.data || [];
+  if (!rows.length)
+    return (
+      <Empty title="ما لقينا تخصص بهذا الاسم">
+        <p>جرّب كلمة أقصر أو اسمًا آخر للتخصص.</p>
+      </Empty>
+    );
+  const groups = new Map<string, { name: string; city: string; items: typeof rows }>();
+  for (const r of rows) {
+    const g = groups.get(r.university_id) || { name: r.university_name, city: r.city, items: [] };
+    g.items.push(r);
+    groups.set(r.university_id, g);
+  }
+  return (
+    <>
+      <p className="muted result-info" role="status">
+        {number(rows.length)} تخصص في {number(groups.size)} جامعة
+      </p>
+      <div className="major-results">
+        {[...groups.entries()].map(([id, g]) => (
+          <section className="panel major-group" key={id}>
+            <h2>
+              <Link to={"/universities/" + id}>{g.name}</Link>
+              {g.city && <small className="muted"> · {g.city}</small>}
+            </h2>
+            <ul>
+              {g.items.map((p) => (
+                <li key={p.program_id}>
+                  <strong>{p.program_name}</strong>
+                  {[p.college, p.degree, p.gender, p.campus]
+                    .map((x) => (x || "").trim())
+                    .filter((x) => x && !/^غير (محدد|مذكور)/.test(x))
+                    .map((x) => (
+                      <span className="chip" key={x}>
+                        {x}
+                      </span>
+                    ))}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </>
   );
 }

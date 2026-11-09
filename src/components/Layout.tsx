@@ -12,7 +12,9 @@ import {
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { usePreferences } from "../lib/store";
 import { useFeature } from "../api/catalog";
-import { db } from "../api/client";
+import { db, queryClient } from "../api/client";
+import { claimPendingPlus, useOffer } from "../api/commerce";
+import { usePlus } from "../api/student";
 import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
@@ -27,6 +29,23 @@ export default function Layout() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   const compareVisible = feature.data && feature.data !== "hidden";
+  const offer = useOffer();
+  const plus = usePlus();
+  useEffect(() => {
+    if (!user) return;
+    void claimPendingPlus().then((n) => {
+      if (n > 0) {
+        void queryClient.invalidateQueries({ queryKey: ["plus"] });
+        void queryClient.invalidateQueries({ queryKey: ["feature"] });
+        toast("تم تفعيل اشتراكك");
+      }
+    });
+  }, [user?.id]);
+  const showPromo =
+    !!offer.data?.commercial_enabled &&
+    !plus.data &&
+    !location.pathname.startsWith("/admin") &&
+    !location.pathname.startsWith("/student/subscription");
   return (
     <>
       <a className="skip-link" href="#main">
@@ -81,6 +100,18 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      {showPromo && (
+        <div className="promo-bar" role="note">
+          <span>
+            <strong>مُوجّه بلس</strong>
+            {offer.data?.season_label ? " لـ" + offer.data.season_label : ""}: ابحث
+            بالتخصص في كل الجامعات، وقارن بينها، واطّلع على النسب السابقة.
+          </span>
+          <Link className="btn primary compact" to="/student/subscription">
+            اشترك{offer.data?.price_text ? " بـ" + offer.data.price_text : ""}
+          </Link>
+        </div>
+      )}
       <main id="main" className="shell main">
         <Outlet />
       </main>
@@ -91,7 +122,6 @@ export default function Layout() {
         <span>قرارك الجامعي يبدأ بمعرفة خياراتك.</span>
         <nav className="footer-links" aria-label="روابط التذييل">
           <Link to="/privacy">الخصوصية</Link>
-          <Link to="/admin/login">دخول فريق المحتوى</Link>
         </nav>
         <small>© {new Date().getFullYear()} مُوجّه</small>
       </footer>
