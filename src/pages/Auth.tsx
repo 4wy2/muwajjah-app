@@ -1,3 +1,4 @@
+import { GOOGLE_ONLY } from "../lib/config";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Compass, Mail, LockKeyhole, ShieldCheck } from "lucide-react";
@@ -58,6 +59,8 @@ export default function Auth({
   const reset = mode === "reset" || recovering;
   const signup = mode === "signup";
   const forgot = mode === "forgot";
+  if (GOOGLE_ONLY && (signup || forgot))
+    return <Navigate to={base + "/login"} replace />;
   const title = reset
     ? "كلمة مرور جديدة"
     : signup
@@ -115,10 +118,15 @@ export default function Auth({
                 : "الحساب اختياري، ويحفظ لك المفضلة ونتائج الموزونة فقط. تصفح الجامعات متاح دون حساب. تفاصيل ما نحفظه في صفحة الخصوصية."
               : reset
                 ? "اختر كلمة مرور قوية لحماية حسابك."
-                : admin
-                  ? "استخدم حسابك المضاف إلى فريق الإدارة."
-                  : "سجّل دخولك لمتابعة خياراتك."}
+                : GOOGLE_ONLY
+                  ? admin
+                    ? "ادخل بحساب قوقل اللي أضافته مالكة مُوجّه للفريق."
+                    : "ادخل بحساب قوقل لحفظ مفضلتك ونتائجك، والبحث بالتخصص ومقارنة الجامعات. تصفح الجامعات متاح بدون حساب."
+                  : admin
+                    ? "استخدم حسابك المضاف إلى فريق الإدارة."
+                    : "سجّل دخولك لمتابعة خياراتك."}
         </p>
+        {(!GOOGLE_ONLY || reset) && (
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -237,13 +245,16 @@ export default function Auth({
             {forgot ? <Mail size={18} /> : <LockKeyhole size={18} />}
           </button>
         </form>
-        {!reset && !forgot && google.data === true && (
+        )}
+        {!reset && !forgot && (GOOGLE_ONLY || google.data === true) && (
           <>
-            <div className="divider">
-              <span>أو</span>
-            </div>
+            {!GOOGLE_ONLY && (
+              <div className="divider">
+                <span>أو</span>
+              </div>
+            )}
             <button
-              className="btn secondary full"
+              className={"btn full " + (GOOGLE_ONLY ? "primary" : "secondary")}
               disabled={busy}
               onClick={async () => {
                 setBusy(true);
@@ -262,10 +273,14 @@ export default function Auth({
         )}
         {admin && !reset && !forgot && (
           <p className="muted small">
-            صلاحيات الإدارة يحددها مالك مُوجّه. إنشاء حساب طالب لا يمنح وصولًا
-            للإدارة.
+            صلاحيات الإدارة تحددها مالكة مُوجّه بإيميل حسابك في قوقل. الدخول وحده
+            لا يمنح وصولًا للإدارة.
           </p>
         )}
+        {error && GOOGLE_ONLY && !reset && (
+          <p className="error-text" role="alert">{error}</p>
+        )}
+        {!GOOGLE_ONLY && (
         <div className="auth-links">
           {!signup && !reset && !forgot && (
             <Link to={base + "/signup"}>
@@ -279,6 +294,7 @@ export default function Auth({
             <Link to={base + "/forgot"}>نسيت كلمة المرور؟</Link>
           )}
         </div>
+        )}
       </section>
     </div>
   );

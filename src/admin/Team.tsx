@@ -227,7 +227,7 @@ export default function Team() {
                 required
               />
             </Field>
-            <Field label="بريد حساب مسجّل في مُوجّه">
+            <Field label="إيميل قوقل للعضو (لازم يكون دخل الموقع بقوقل مرة وحدة على الأقل)">
               <input
                 name="email"
                 type="email"

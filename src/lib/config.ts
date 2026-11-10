@@ -17,3 +17,7 @@ export const CONTACT_EMAIL = "";
 // Pre-launch preview: shows a small "beta" notice. Set to false on launch day
 // (and remove the robots noindex line in index.html, and public/robots.txt Disallow: /).
 export const PREVIEW = true;
+
+// Sign-in is Google only (students and team). The owner grants team access by
+// the Google account's email from Admin > Team. Password reset links still work.
+export const GOOGLE_ONLY = true;
