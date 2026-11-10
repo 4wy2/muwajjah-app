@@ -18,13 +18,12 @@
 - [ ] افتح الموقع في نافذة خاصة بلا دخول: لا قفل، ولا «بلس»، ولا «اشتراكي».
 
 ## 4. المصادقة والنطاق
-- [ ] Supabase ← Authentication ← URL Configuration: اضبط Site URL على النطاق النهائي.
-- [ ] Redirect URLs: أضف `/auth/callback` و`/auth/reset` و`/admin/callback` و`/admin/reset` على النطاق النهائي.
-- [ ] مزود البريد (SMTP) وحدوده: راجعها قبل فتح التسجيل الواسع. لا تُلغِ تأكيد البريد لتجاوز `email rate limit exceeded`.
-- [ ] Google: فعّل المزود في Supabase، وأضف Callback إلى عميل Google، ثم فعّل ظهور الزر من الإدارة. السر يبقى في Supabase فقط.
-- [ ] جرّب في المتصفح نفسه: تسجيل، ثم تأكيد، ثم دخول، ثم خروج، ثم استعادة كلمة المرور. هذا شرط تدفق PKCE.
+- الدخول بقوقل فقط (`GOOGLE_ONLY` في `src/lib/config.ts`). لا تسجيل بالبريد ولا كلمات مرور للطلاب.
+- [ ] عند نقل الدومين: Site URL وRedirect URLs في Supabase (التفاصيل في `docs/RELEASE.md`).
+- [ ] جرّب في نافذة خاصة: دخول بقوقل، ثم حفظ مفضلة، ثم خروج ودخول.
 
 ## 5. النشر
+- [ ] مفتاح الإطلاق `LAUNCH=1` (يشيل شريط التجريبي ومنع الأرشفة). التفاصيل في `docs/RELEASE.md`.
 - [ ] ارفع `dist` (أو اربط المستودع بـNetlify: build `npm run build`، publish `dist`، Node 22).
 - [ ] افتح مباشرة `/universities/<id>` و`/student/dashboard` و`/admin/login`، ثم حدّث الصفحة. يجب ألا يظهر 404.
 - [ ] لا تترك رابط معاينة عامًا لنسخة تجريبية متصلة بالقاعدة نفسها.

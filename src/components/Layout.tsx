@@ -142,6 +142,7 @@ export default function Layout() {
         <span>قرارك الجامعي يبدأ بمعرفة خياراتك.</span>
         <nav className="footer-links" aria-label="روابط التذييل">
           <Link to="/privacy">الخصوصية</Link>
+          <Link to="/terms">شروط الاستخدام</Link>
         </nav>
         <small>© {new Date().getFullYear()} مُوجّه</small>
       </footer>
