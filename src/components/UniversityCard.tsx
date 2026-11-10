@@ -114,7 +114,7 @@ const UniversityCard = memo(function UniversityCard({
       <div className="card-facts">
         {u.type && (
           <span className={"badge " + (/أهل|خاص/.test(u.type) ? "private" : "")}>
-            {u.type}
+            {/حكومي/.test(u.type) ? "حكومية" : u.type}
           </span>
         )}
         {housingLabel && (

@@ -2116,3 +2116,27 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .sort-select select{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:0 10px;font-size:13px;color:var(--text)}
 .results-bar{flex-wrap:wrap}
 @media (max-width:640px){.results-tools{margin-inline-start:0;width:100%;justify-content:space-between}}
+/* v2.6 home hero */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:36px 28px 26px;margin:4px 0 8px;color:#fff;
+  background:radial-gradient(90% 120% at 100% 0%,#8a70ee 0%,var(--accent) 45%,#3b2794 100%);box-shadow:0 20px 44px #4b33b42b}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;
+  background-image:radial-gradient(#ffffff22 1px,transparent 1px);background-size:18px 18px;
+  -webkit-mask-image:linear-gradient(to left,#000,transparent 70%);mask-image:linear-gradient(to left,#000,transparent 70%)}
+.hero>*{position:relative}
+.hero h1{font-size:clamp(28px,5vw,42px);line-height:1.25;margin:0 0 8px;font-weight:800}
+.hero-lead{margin:0 0 20px;max-width:640px;font-size:clamp(15px,2.1vw,17px);color:#efeaff;line-height:1.8}
+.hero-modes{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:#ffffff1f;border:1px solid #ffffff2e;margin-bottom:12px}
+.hero-modes button{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:10px;padding:8px 14px;background:transparent;color:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.hero-modes button.active{background:#fff;color:var(--accent-dark)}
+.catalog .search-box.hero-search{height:60px;border-radius:16px;border-color:transparent;box-shadow:0 10px 26px #1d134d33;margin:0}
+.catalog .search-box.hero-search input{font-size:17px;color:var(--text)}
+.hero-inside{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:18px;font-size:13px;color:#e6defd}
+.hero-inside ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.hero-inside li{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:#ffffff1a;border:1px solid #ffffff2b;color:#fff;font-weight:600}
+[data-theme="dark"] .hero{background:radial-gradient(90% 120% at 100% 0%,#5d47bd 0%,#3d2b8f 50%,#211858 100%)}
+@media (max-width:640px){
+  .hero{padding:26px 16px 20px;border-radius:20px}
+  .hero-modes{display:flex}
+  .hero-modes button{flex:1;justify-content:center;padding:8px 6px;font-size:13px}
+  .hero-inside>span{width:100%}
+}

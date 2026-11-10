@@ -1,5 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Lock } from "lucide-react";
+import {
+  Search,
+  Lock,
+  Landmark,
+  BookOpen,
+  ClipboardCheck,
+  Building2,
+  MapPinned,
+  Trophy,
+  Sparkles,
+  Phone,
+} from "lucide-react";
+
+// What every university page covers (labels only, no counts).
+const INSIDE = [
+  { icon: ClipboardCheck, label: "شروط القبول" },
+  { icon: BookOpen, label: "التخصصات" },
+  { icon: Building2, label: "السكن" },
+  { icon: MapPinned, label: "الفروع" },
+  { icon: Trophy, label: "التصنيف" },
+  { icon: Sparkles, label: "البيئة الجامعية" },
+  { icon: Phone, label: "التواصل" },
+];
 import { Link, useSearchParams } from "react-router-dom";
 import { useProgramSearch } from "../api/commerce";
 import { track } from "../lib/analytics";
@@ -99,44 +121,47 @@ export default function Home() {
     );
   return (
     <div className="catalog">
-      <div className="catalog-head">
-        <h1>دليل الجامعات السعودية</h1>
-        <p>كل اللي تحتاجه عن القبول والتخصصات والسكن في كل جامعة.</p>
-      </div>
-      <div className="search-box" id="search">
-        <Search size={19} aria-hidden="true" />
-        <input
-          aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
-          type="search"
-          placeholder={
-            mode === "major"
-              ? "اكتب التخصص، مثل: تمريض، هندسة كهربائية"
-              : "ابحث باسم الجامعة أو المدينة"
-          }
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-      {majorState !== "hidden" && (
-        <div className="search-modes" role="tablist" aria-label="نوع البحث">
-          <button
-            role="tab"
-            aria-selected={mode === "uni"}
-            className={"chip-btn" + (mode === "uni" ? " active" : "")}
-            onClick={() => setMode("uni")}
-          >
-            الجامعات
-          </button>
-          <button
-            role="tab"
-            aria-selected={mode === "major"}
-            className={"chip-btn" + (mode === "major" ? " active" : "")}
-            onClick={() => setMode("major")}
-          >
-            {majorState === "locked" && <Lock size={14} aria-hidden="true" />} التخصصات
-          </button>
+      <section className="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title">دليل الجامعات السعودية</h1>
+        <p className="hero-lead">
+          القبول والتخصصات والسكن لكل جامعة حكومية، مرتّبة في صفحة وحدة.
+        </p>
+        {majorState !== "hidden" && (
+          <div className="hero-modes" role="tablist" aria-label="نوع البحث">
+            <button role="tab" aria-selected={mode === "uni"} className={mode === "uni" ? "active" : ""} onClick={() => setMode("uni")}>
+              <Landmark size={16} aria-hidden="true" /> ابحث عن جامعة
+            </button>
+            <button role="tab" aria-selected={mode === "major"} className={mode === "major" ? "active" : ""} onClick={() => setMode("major")}>
+              {majorState === "locked" ? <Lock size={16} aria-hidden="true" /> : <BookOpen size={16} aria-hidden="true" />} ابحث عن تخصص
+            </button>
+          </div>
+        )}
+        <div className="search-box hero-search" id="search">
+          <Search size={20} aria-hidden="true" />
+          <input
+            aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
+            type="search"
+            placeholder={
+              mode === "major"
+                ? "اكتب التخصص، مثل: تمريض، هندسة كهربائية"
+                : "اكتب اسم الجامعة أو المدينة"
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-      )}
+        <div className="hero-inside">
+          <span>في صفحة كل جامعة:</span>
+          <ul>
+            {INSIDE.map(({ icon: Icon, label }) => (
+              <li key={label}>
+                <Icon size={15} aria-hidden="true" />
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
       {mode === "major" && (
         <MajorResults
           term={term}
@@ -147,20 +172,6 @@ export default function Home() {
       {mode === "uni" && (
       <>
       <div className="results-bar">
-        {types.length > 1 && (
-          <div className="type-chips" role="group" aria-label="نوع الجامعة">
-            {["", ...types].map((t) => (
-              <button
-                key={t || "all"}
-                className={"chip-btn" + (type === t ? " active" : "")}
-                aria-pressed={type === t}
-                onClick={() => setType(t)}
-              >
-                {t || "الكل"}
-              </button>
-            ))}
-          </div>
-        )}
         <div className="results-tools">
           <span className="result-count" role="status">
             {q.isSuccess ? number(results.length) + (searching ? " نتيجة" : " جامعة") : ""}
