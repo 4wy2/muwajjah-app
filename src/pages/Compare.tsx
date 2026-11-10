@@ -155,7 +155,7 @@ export default function Compare() {
                           زيارة الموقع ↗
                         </a>
                       ) : (
-                        "غير محدد"
+                        "—"
                       )}
                     </td>
                   ))}

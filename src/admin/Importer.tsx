@@ -26,6 +26,7 @@ export default function Importer() {
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
+  const [failures, setFailures] = useState<{ name: string; reason: string }[]>([]);
   const toast = useToast();
   if (!member.is_owner && !member.can_edit)
     return <Empty title="ليس لديك إذن استيراد المحتوى" />;
@@ -46,6 +47,7 @@ export default function Importer() {
                 setDiff([]);
                 setFileName("");
                 setError("");
+                setFailures([]);
               }}
             >
               {Object.entries(specs).map(([k, s]) => (
@@ -247,6 +249,18 @@ export default function Importer() {
               اعتماد {selected.length} سجل
             </button>
             <p role="status">{progress}</p>
+            {failures.length > 0 && (
+              <div className="import-failures" role="alert">
+                <strong>لم تُحفظ {failures.length} سجلات:</strong>
+                <ul>
+                  {failures.map((f, i) => (
+                    <li key={i}>
+                      <b>{f.name || "سجل بدون اسم"}</b>: {f.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </>
         )}
       </section>
@@ -258,24 +272,37 @@ export default function Importer() {
         onClose={() => setConfirm(false)}
         onConfirm={async () => {
           setBusy(true);
-          let count = 0;
+          setConfirm(false);
+          setError("");
+          setFailures([]);
+          const chosen = diff.filter((d) => selected.includes(d.key));
           const completed: string[] = [];
+          const failed: { name: string; reason: string }[] = [];
           try {
-            for (const d of diff.filter((d) => selected.includes(d.key))) {
-              await saveRecord(kind, d.payload, d.id);
-              completed.push(d.key);
-              count++;
-              setProgress(`حُفظ ${count} من ${selected.length}`);
+            // Each record is saved on its own: one bad row is reported with
+            // its reason and does not stop the rest.
+            for (const d of chosen) {
+              try {
+                await saveRecord(kind, d.payload, d.id);
+                completed.push(d.key);
+              } catch (err) {
+                failed.push({ name: d.name, reason: friendly(err) });
+              }
+              setProgress(
+                `تمت معالجة ${completed.length + failed.length} من ${chosen.length}`,
+              );
             }
-            toast("اكتمل الاستيراد: " + count + " سجل");
-            setDiff([]);
-            setFileName("");
-            setConfirm(false);
-          } catch (err) {
-            setError(
-              "حُفظ " + count + " سجل. توقف الاستيراد: " + friendly(err),
-            );
-            setConfirm(false);
+            if (!failed.length) {
+              toast("اكتمل الاستيراد: " + completed.length + " سجل");
+              setDiff([]);
+              setFileName("");
+            } else {
+              toast(
+                `نجح ${completed.length} وفشل ${failed.length} من ${chosen.length}. السجلات الفاشلة باقية محددة لإعادة المحاولة.`,
+                true,
+              );
+              setFailures(failed);
+            }
           } finally {
             setSelected((s) => s.filter((x) => !completed.includes(x)));
             setDiff((ds) =>

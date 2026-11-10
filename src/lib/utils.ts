@@ -18,9 +18,12 @@ export const safeUrl = (v: unknown) => {
 };
 export const housing = (v: string) =>
   ({
-    available: "يتوفر سكن",
-    limited: "سكن بشروط",
-    unavailable: "لا يتوفر سكن",
+    male_only: "يوجد سكن للطلاب فقط",
+    female_only: "يوجد سكن للطالبات فقط",
+    both: "يوجد سكن للطلاب والطالبات",
+    available: "يوجد سكن",
+    limited: "يوجد سكن بشروط",
+    unavailable: "لا يوجد سكن",
   })[v] || "";
 export const date = (s: string | null | undefined) => {
   if (!s) return "—";
