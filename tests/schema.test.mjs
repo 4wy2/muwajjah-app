@@ -327,3 +327,24 @@ describe("migration 007: members-only features", () => {
     await db.exec(file("007_members_mode.sql"));
   });
 });
+
+describe("migration 008: edits over POST keep every database rule", () => {
+  it("applies the same permissions as a direct update", async () => {
+    await root();
+    await db.exec(file("008_update_via_post.sql"));
+    await db.exec(file("008_update_via_post.sql"));
+    await as(null);
+    expect(await fails(`select guide_update_record('programs',$1,'{"college":"x"}')`, [P2])).toBe(true);
+    await as(EDITOR);
+    // Draft row in an assigned university: allowed.
+    expect((await q(`select guide_update_record('programs',$1,'{"college":"كلية أ"}') r`, [P2]))[0].r).toBe(P2);
+    // Unassigned university: no row changes.
+    expect((await q(`select guide_update_record('universities',$1,'{"city":"x"}') r`, [U2]))[0].r).toBe(null);
+    // Unknown column and unknown table are refused.
+    expect(await fails(`select guide_update_record('programs',$1,'{"nope":1}')`, [P2])).toBe(true);
+    expect(await fails(`select guide_update_record('admins',$1,'{"is_owner":true}')`, [P2])).toBe(true);
+    await as(OWNER);
+    expect((await q(`select guide_update_record('cutoffs',(select id from guide_cutoffs limit 1),'{"ratio":91.5}') r`))[0].r).not.toBe(null);
+    expect(Number((await q(`select ratio from guide_cutoffs limit 1`))[0].ratio)).toBe(91.5);
+  });
+});

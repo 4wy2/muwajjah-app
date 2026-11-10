@@ -45,13 +45,23 @@ export async function saveRecord(
   payload: Record<string, unknown>,
   id?: string,
 ) {
-  const q = id
-    ? db
-        .from("guide_" + kind)
-        .update(payload)
-        .eq("id", id)
-    : db.from("guide_" + kind).insert({ ...payload, published: false });
-  const { data, error } = await q.select("id");
+  if (id) {
+    // Edits go through a POST function (database/008) instead of PATCH:
+    // some browsers, extensions and antivirus tools block PATCH requests.
+    // The function runs with the user's own rights, so every rule still applies.
+    const { data, error } = await db.rpc("guide_update_record", {
+      target_kind: kind,
+      record_id: id,
+      changes: payload,
+    });
+    if (error) throw error;
+    if (!data) throw new Error("لم يُحفظ السجل. تحقق من صلاحيتك وحدّث الصفحة.");
+    return { id: data as string };
+  }
+  const { data, error } = await db
+    .from("guide_" + kind)
+    .insert({ ...payload, published: false })
+    .select("id");
   if (error) throw error;
   if (data?.length !== 1)
     throw new Error("لم يُحفظ السجل. تحقق من صلاحيتك وحدّث الصفحة.");
