@@ -23,4 +23,4 @@ export const PREVIEW = true;
 export const GOOGLE_ONLY = true;
 
 // Google Analytics 4 Measurement ID (public, e.g. "G-XXXXXXXXXX"). Empty = off.
-export const GA_ID = "";
+export const GA_ID = "G-9EV7JD2S2Y";
