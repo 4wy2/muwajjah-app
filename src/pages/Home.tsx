@@ -1,19 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  Search,
-  Lock,
-  Route,
-  BookOpen,
-  Building2,
-  Calculator,
-  GitCompareArrows,
-  Link2,
-  ArrowUp,
-} from "lucide-react";
+import { Search, Lock } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useProgramSearch } from "../api/commerce";
 import { track } from "../lib/analytics";
-import { useCatalog, useFeature, missingSearch, useSiteStats } from "../api/catalog";
+import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
 import { Empty, ErrorState, useDebounce } from "../components/ui";
@@ -34,7 +24,6 @@ export default function Home() {
   const term = useDebounce(search);
   const type = params.get("type") || "";
   const sort = params.get("sort") === "city" ? "city" : "name";
-  const stats = useSiteStats();
   const compareOn = !!feature.data && feature.data !== "hidden";
   const [limit, setLimit] = useState(30);
   const canSearchMajor = majorState === "free" || majorState === "plus";
@@ -110,37 +99,11 @@ export default function Home() {
     );
   return (
     <div className="catalog">
-      <section className="hero" aria-labelledby="hero-title">
-        <span className="hero-eyebrow">دليلك المستقل للجامعات السعودية</span>
-        <h1 id="hero-title">
-          اعرف جامعتك <em>قبل</em> ما تقدّم
-        </h1>
-        <p className="hero-lead">
-          شروط القبول ومساراته، التخصصات، والسكن الجامعي لكل جامعة في صفحة وحدة
-          مرتّبة، مع رابط المصدر عند توفره.
-        </p>
-        {q.isSuccess && (
-          <dl className="hero-stats">
-            <div>
-              <dt>جامعة وكلية</dt>
-              <dd>{number(universities.length)}</dd>
-            </div>
-            {!!stats.data?.programs && (
-              <div>
-                <dt>تخصص</dt>
-                <dd>{number(stats.data.programs)}</dd>
-              </div>
-            )}
-            {!!stats.data?.tracks && (
-              <div>
-                <dt>مسار قبول</dt>
-                <dd>{number(stats.data.tracks)}</dd>
-              </div>
-            )}
-          </dl>
-        )}
-      </section>
-      <div className="search-box hero-search" id="search">
+      <div className="catalog-head">
+        <h1>دليل الجامعات السعودية</h1>
+        <p>كل اللي تحتاجه عن القبول والتخصصات والسكن في كل جامعة.</p>
+      </div>
+      <div className="search-box" id="search">
         <Search size={19} aria-hidden="true" />
         <input
           aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
@@ -263,76 +226,7 @@ export default function Home() {
       )}
       </>
       )}
-      {mode === "uni" && !searching && q.isSuccess && (
-        <Promo compare={compareOn} majors={majorState !== "hidden"} calculator={!!stats.data?.tracks} />
-      )}
     </div>
-  );
-}
-
-// What the student gets, then how to use it. Lists only features that exist
-// and are switched on; nothing about subscriptions.
-function Promo({ compare, majors, calculator }: { compare: boolean; majors: boolean; calculator: boolean }) {
-  const features = [
-    { icon: Route, title: "شروط القبول", text: "وش تطلب الجامعة، وكيف تقدّم، ووش يميّز كل مسار." },
-    { icon: BookOpen, title: "التخصصات حسب الكلية", text: "تخصصات كل جامعة مرتبة حسب الكلية، مع بحث داخلها." },
-    { icon: Building2, title: "السكن الجامعي", text: "هل فيه سكن؟ للطلاب أو الطالبات؟ وش شروطه؟" },
-    ...(calculator
-      ? [{ icon: Calculator, title: "حاسبة النسبة الموزونة", text: "احسب نسبتك للمسارات اللي أوزانها معلنة، واحفظ نتيجتك." }]
-      : []),
-    ...(compare
-      ? [{ icon: GitCompareArrows, title: "قارن بين الجامعات", text: "حط حتى 3 جامعات جنب بعض وشوف الفروقات." }]
-      : []),
-    ...(majors
-      ? [{ icon: Search, title: "ابحث بالتخصص", text: "اكتب التخصص وتطلع لك كل الجامعات اللي تدرّسه." }]
-      : []),
-    { icon: Link2, title: "المصدر واضح", text: "نرفق رابط المصدر وتاريخ المراجعة عند توفرهما." },
-  ];
-  return (
-    <>
-      <section className="promo" aria-labelledby="promo-title">
-        <h2 id="promo-title">وش تلقى في مُوجّه؟</h2>
-        <div className="promo-grid">
-          {features.map(({ icon: Icon, title, text }) => (
-            <div className="promo-card" key={title}>
-              <span className="promo-icon" aria-hidden="true">
-                <Icon size={20} />
-              </span>
-              <h3>{title}</h3>
-              <p>{text}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="steps" aria-labelledby="steps-title">
-        <h2 id="steps-title">خطوات بسيطة وتوضح لك الصورة</h2>
-        <ol>
-          <li>
-            <strong>ابحث</strong>
-            <span>باسم الجامعة أو المدينة.</span>
-          </li>
-          <li>
-            <strong>افتح صفحة الجامعة</strong>
-            <span>القبول والتخصصات والسكن في مكان واحد.</span>
-          </li>
-          {(compare || calculator) && (
-            <li>
-              <strong>{compare ? "قارن بين خياراتك" : "احسب نسبتك"}</strong>
-              <span>{compare ? "حط الجامعات جنب بعض وشوف الفروقات." : "احسب نسبتك الموزونة للمسار اللي يناسبك."}</span>
-            </li>
-          )}
-        </ol>
-        <button
-          className="btn primary"
-          onClick={() => {
-            document.getElementById("search")?.scrollIntoView({ behavior: "smooth", block: "center" });
-            (document.querySelector("#search input") as HTMLInputElement | null)?.focus({ preventScroll: true });
-          }}
-        >
-          <ArrowUp size={16} aria-hidden="true" /> ابدأ البحث
-        </button>
-      </section>
-    </>
   );
 }
 
