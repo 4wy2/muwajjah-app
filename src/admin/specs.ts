@@ -48,7 +48,7 @@ export const specs: Record<
         key: "housing_status",
         label: "حالة السكن",
         type: "select",
-        options: ["unknown", "available", "limited", "unavailable"],
+        options: ["unknown", "male_only", "female_only", "both", "unavailable", "available", "limited"],
         default: "unknown",
       },
       { key: "housing_note", label: "معلومات السكن", type: "textarea" },
@@ -142,9 +142,12 @@ export const specs: Record<
 };
 export const fieldValueLabels: Record<string, string> = {
   unknown: "غير محدد",
-  available: "يتوفر سكن",
+  male_only: "سكن للطلاب فقط",
+  female_only: "سكن للطالبات فقط",
+  both: "سكن للطلاب والطالبات",
+  available: "يوجد سكن (لم يُحدد لمن)",
   limited: "سكن بشروط",
-  unavailable: "لا يتوفر سكن",
+  unavailable: "لا يوجد سكن",
   general: "متاح للجميع",
   historical_cutoffs: "يتبع صلاحية النسب السابقة",
 };

@@ -348,3 +348,20 @@ describe("migration 008: edits over POST keep every database rule", () => {
     expect(Number((await q(`select ratio from guide_cutoffs limit 1`))[0].ratio)).toBe(91.5);
   });
 });
+
+describe("migration 009: housing says who it is for", () => {
+  it("accepts the new values, keeps the old ones, rejects anything else, and rolls back", async () => {
+    await root();
+    await db.exec(file("009_housing_gender.sql"));
+    await db.exec(file("009_housing_gender.sql"));
+    await as(OWNER);
+    for (const v of ["male_only", "female_only", "both", "unavailable", "available"])
+      expect((await q(`select guide_update_record('universities',$1,$2::jsonb) r`, [U, JSON.stringify({ housing_status: v })]))[0].r).toBe(U);
+    expect(await fails(`select guide_update_record('universities',$1,'{"housing_status":"girls"}')`, [U])).toBe(true);
+    await root();
+    await db.exec(`update guide_universities set housing_status='unknown'`);
+    await db.exec(file("009_housing_gender_rollback.sql"));
+    expect(await fails(`update guide_universities set housing_status='both'`)).toBe(true);
+    await db.exec(file("009_housing_gender.sql"));
+  });
+});
