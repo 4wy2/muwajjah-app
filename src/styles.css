@@ -2088,3 +2088,6 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .subscription .price { font-size: 1.6rem; font-weight: 800; color: var(--accent-dark); margin: 4px 0; }
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
 .preview-bar { text-align: center; font-size: 0.85rem; padding: 6px 12px; background: var(--surface); border-bottom: 1px dashed var(--line); color: var(--muted); }
+.import-failures{margin-top:12px;padding:12px 14px;border:1px solid #f1c4c4;background:#fff6f6;border-radius:12px;color:#7a1f1f}
+.import-failures ul{margin:8px 0 0;padding-inline-start:20px;max-height:240px;overflow:auto}
+.import-failures li{margin:4px 0}
