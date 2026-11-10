@@ -629,7 +629,6 @@ export default function University() {
   }
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
   const glance = [
-    programs.data?.length ? number(programs.data.length) + " تخصص" : "",
     trackList.length ? number(trackList.length) + " مسار قبول" : "",
     housing(uni.housing_status) || "",
   ].filter(Boolean);
