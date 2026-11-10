@@ -365,3 +365,22 @@ describe("migration 009: housing says who it is for", () => {
     await db.exec(file("009_housing_gender.sql"));
   });
 });
+
+describe("migration 010 (prepared): visitors cannot call admin functions", () => {
+  it("blocks anon from owner RPCs but keeps public browsing and the owner's tools", async () => {
+    await root();
+    await db.exec(file("010_revoke_anon_admin_rpc.sql"));
+    await db.exec(file("010_revoke_anon_admin_rpc.sql"));
+    await as(null);
+    expect(await fails(`select guide_list_team()`)).toBe(true);
+    expect(await fails(`select guide_is_owner()`)).toBe(true);
+    expect((await q(`select guide_feature_state('comparison') s`))[0].s).toBeTruthy();
+    expect(await fails(`select id from guide_universities where published`)).toBe(false);
+    await as(OWNER);
+    expect((await q(`select guide_is_owner() o`))[0].o).toBe(true);
+    await root();
+    await db.exec(file("010_revoke_anon_admin_rpc_rollback.sql"));
+    await as(null);
+    expect(await fails(`select guide_is_owner()`)).toBe(false);
+  });
+});
