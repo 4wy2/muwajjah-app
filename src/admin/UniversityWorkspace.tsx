@@ -84,7 +84,9 @@ export default function UniversityWorkspace() {
               <Eye size={16} /> كما يراها الطالب
             </a>
           ) : (
-            <span className="muted small">المعاينة العامة تظهر بعد النشر.</span>
+            <a className="btn secondary compact" href={BASE + "/universities/" + id + "?preview=1"} target="_blank" rel="noreferrer">
+              <Eye size={16} /> معاينة قبل النشر
+            </a>
           )}
           {canPublish && (
             <button className="btn primary compact" onClick={() => setConfirm(true)}>

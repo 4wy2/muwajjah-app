@@ -485,10 +485,12 @@ const DEFAULT_DESCRIPTION =
 
 export default function University() {
   const { id = "" } = useParams();
-  const u = useUniversity(id);
-  const programs = useUniversityContent<Program>("programs", id);
-  const tracks = useUniversityContent<Track>("tracks", id);
-  const sections = useUniversityContent<Section>("sections", id);
+  const [search] = useSearchParams();
+  const preview = search.get("preview") === "1";
+  const u = useUniversity(id, preview);
+  const programs = useUniversityContent<Program>("programs", id, preview);
+  const tracks = useUniversityContent<Track>("tracks", id, preview);
+  const sections = useUniversityContent<Section>("sections", id, preview);
   const { user } = useAuth();
   const cutoffFeature = useFeature("historical_cutoffs", user?.id);
   const canViewCutoffSections =
@@ -500,8 +502,10 @@ export default function University() {
       setDescription(
         (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
       );
-      void interest("university", id);
-      track("university_view", { university: u.data.name });
+      if (!preview) {
+        void interest("university", id);
+        track("university_view", { university: u.data.name });
+      }
     }
     return () => {
       document.title = "مُوجّه | دليلك للجامعة";
@@ -629,6 +633,11 @@ export default function University() {
   ].filter(Boolean);
   return (
     <article className="profile">
+      {preview && (
+        <p className="notice" role="note">
+          معاينة للفريق: هذا ما سيظهر للطالب بعد نشر الجامعة ومحتواها.
+        </p>
+      )}
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link to="/">دليل الجامعات</Link>
         <span aria-hidden="true">/</span>
