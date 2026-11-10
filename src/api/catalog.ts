@@ -58,8 +58,9 @@ export function useFeature(key: string, userId?: string) {
     queryKey: ["feature", key, userId || "guest"],
     queryFn: () =>
       rpc<FeatureState>("guide_feature_state", { target_feature: key }),
-    staleTime: 15_000,
-    refetchInterval: 60_000,
+    // Re-checked when the tab regains focus or after login (invalidated in
+    // Layout), not on a timer for every open tab.
+    staleTime: 60_000,
   });
 }
 export function useCutoffs(id: string, allowed: boolean, userId?: string) {
