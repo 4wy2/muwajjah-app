@@ -103,3 +103,26 @@ export async function missingSearch(term: string) {
   }
 }
 export type { Program, Track, Section };
+// Real totals for the home page, counted on the server (no rows downloaded).
+export function useSiteStats() {
+  return useQuery({
+    queryKey: ["site-stats"],
+    staleTime: 3_600_000,
+    queryFn: async () => {
+      const count = async (table: string) => {
+        const { count, error } = await db
+          .from(table)
+          .select("id", { count: "exact", head: true })
+          .eq("published", true)
+          .is("deleted_at", null);
+        if (error) throw error;
+        return count || 0;
+      };
+      const [programs, tracks] = await Promise.all([
+        count("guide_programs"),
+        count("guide_tracks"),
+      ]);
+      return { programs, tracks };
+    },
+  });
+}

@@ -2103,3 +2103,55 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .rich li{margin:4px 0;line-height:1.8}
 .rich p{margin:0 0 8px}
 .inline-link{unicode-bidi:isolate;word-break:break-all}
+/* v2.5 home: hero, stats, sort, promo */
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:34px 26px 28px;margin:4px 0 18px;
+  background:radial-gradient(120% 140% at 100% 0%,#7e63e6 0%,var(--accent) 40%,#3f2a99 100%);color:#fff;
+  box-shadow:0 18px 40px #4b33b42e}
+.hero::after{content:"";position:absolute;inset:auto -60px -90px auto;width:260px;height:260px;border-radius:50%;
+  background:radial-gradient(circle,#ffffff2b,transparent 70%);pointer-events:none}
+.hero-eyebrow{display:inline-block;font-size:13px;font-weight:700;padding:5px 12px;border-radius:999px;background:#ffffff26;border:1px solid #ffffff40}
+.hero h1{font-size:clamp(28px,5.4vw,44px);line-height:1.25;margin:14px 0 8px;font-weight:800;letter-spacing:-.2px}
+.hero h1 em{font-style:normal;color:#ffd970}
+.hero-lead{max-width:620px;margin:0;font-size:clamp(15px,2.2vw,17px);color:#efeaff;line-height:1.8}
+.hero-stats{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 0;padding:0}
+.hero-stats div{background:#ffffff1f;border:1px solid #ffffff33;border-radius:14px;padding:8px 16px;min-width:96px}
+.hero-stats dd{margin:0;font-size:24px;font-weight:800;line-height:1.2;order:-1}
+.hero-stats div{display:flex;flex-direction:column}
+.hero-stats dt{font-size:13px;color:#e6defd}
+.catalog .search-box.hero-search{height:62px;border-radius:16px;margin-top:-34px;position:relative;z-index:2;margin-inline:14px;
+  box-shadow:0 12px 30px #2a1f6a1f;border-color:transparent}
+.catalog .search-box.hero-search input{font-size:17px}
+.catalog .search-box.hero-search svg{color:var(--accent)}
+.catalog .search-modes{margin:14px 0 4px;display:flex;gap:8px;justify-content:flex-start}
+.results-tools{display:flex;align-items:center;gap:12px;margin-inline-start:auto}
+.result-count{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap}
+.sort-select{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.sort-select select{height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:0 10px;font-size:13px;color:var(--text)}
+.results-bar{flex-wrap:wrap}
+.promo{margin:40px 0 0}
+.promo h2,.steps h2{font-size:22px;margin:0 0 14px;font-weight:800}
+.promo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (max-width:900px){.promo-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:560px){.promo-grid{grid-template-columns:1fr}}
+.promo-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
+.promo-card h3{font-size:16px;margin:10px 0 4px}
+.promo-card p{margin:0;color:var(--muted);font-size:14px;line-height:1.7}
+.promo-icon{display:inline-grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--tint);color:var(--accent)}
+.steps{margin:28px 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px}
+.steps ol{list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:0 0 18px;padding:0}
+.steps li{counter-increment:s;display:flex;flex-direction:column;gap:2px;padding-inline-start:46px;position:relative;min-height:36px}
+.steps li::before{content:counter(s);position:absolute;inset-inline-start:0;top:0;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;background:var(--accent);color:#fff;font-weight:800}
+.steps li span{color:var(--muted);font-size:14px}
+[data-theme="dark"] .hero{background:radial-gradient(120% 140% at 100% 0%,#5a44b8 0%,#3d2b8f 50%,#22195a 100%)}
+@media (max-width:640px){
+  .hero{padding:26px 18px 46px;border-radius:18px}
+  .catalog .search-box.hero-search{margin-inline:8px}
+  .results-tools{margin-inline-start:0;width:100%;justify-content:space-between}
+}
+@media (max-width:560px){
+  .promo-card{display:grid;grid-template-columns:40px 1fr;column-gap:12px;padding:14px}
+  .promo-icon{grid-row:span 2}
+  .promo-card h3{margin:0 0 2px;font-size:15px}
+  .promo h2,.steps h2{font-size:19px}
+}
