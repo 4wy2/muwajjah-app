@@ -9,7 +9,7 @@ import {
   useFeature,
   interest,
 } from "../api/catalog";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth, useMember } from "../auth/AuthProvider";
 import { useScores, saveScore } from "../api/student";
 import { UniversityLogo, FavoriteButton } from "../components/UniversityCard";
 import {
@@ -486,7 +486,9 @@ const DEFAULT_DESCRIPTION =
 export default function University() {
   const { id = "" } = useParams();
   const [search] = useSearchParams();
-  const preview = search.get("preview") === "1";
+  const member = useMember();
+  // Team-only preview; for visitors the parameter is ignored.
+  const preview = search.get("preview") === "1" && !!member.data?.is_enabled;
   const u = useUniversity(id, preview);
   const programs = useUniversityContent<Program>("programs", id, preview);
   const tracks = useUniversityContent<Track>("tracks", id, preview);

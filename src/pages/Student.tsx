@@ -18,6 +18,7 @@ import {
   useProfile,
   useScores,
   usePlus,
+  usePlusFeatures,
   useCommercialVisible,
   deleteScore,
 } from "../api/student";
@@ -310,6 +311,7 @@ export function Scores() {
 }
 export function Subscription() {
   const q = usePlus();
+  const plusFeatures = usePlusFeatures();
   const { user } = useAuth();
   const offer = useOffer();
   const commercial = useCommercialVisible();
@@ -339,9 +341,9 @@ export function Subscription() {
           ) : (
             <>
               <ul className="plus-features">
-                <li>البحث بالتخصص في كل الجامعات</li>
-                <li>مقارنة الجامعات</li>
-                <li>نسب القبول السابقة (تقديرية)</li>
+                {plusFeatures.map((f) => (
+                  <li key={f}>{f}</li>
+                ))}
               </ul>
               {o?.price_text && <p className="price">{o.price_text}</p>}
               {o?.season_ends_at && (

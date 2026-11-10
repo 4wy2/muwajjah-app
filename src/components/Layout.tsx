@@ -14,7 +14,7 @@ import { usePreferences } from "../lib/store";
 import { useFeature } from "../api/catalog";
 import { db, queryClient } from "../api/client";
 import { claimPendingPlus, useOffer } from "../api/commerce";
-import { usePlus } from "../api/student";
+import { usePlus, usePlusFeatures } from "../api/student";
 import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
@@ -52,8 +52,10 @@ export default function Layout() {
       }
     });
   }, [user?.id]);
+  const plusFeatures = usePlusFeatures();
   const showPromo =
     !!offer.data?.commercial_enabled &&
+    plusFeatures.length > 0 &&
     !plus.data &&
     !location.pathname.startsWith("/admin") &&
     !location.pathname.startsWith("/student/subscription");
@@ -120,8 +122,8 @@ export default function Layout() {
         <div className="promo-bar" role="note">
           <span>
             <strong>مُوجّه بلس</strong>
-            {offer.data?.season_label ? " لـ" + offer.data.season_label : ""}: ابحث
-            بالتخصص في كل الجامعات، وقارن بينها، واطّلع على النسب السابقة.
+            {offer.data?.season_label ? " لـ" + offer.data.season_label : ""}:{" "}
+            {plusFeatures.join("، ")}.
           </span>
           <Link
             className="btn primary compact"
