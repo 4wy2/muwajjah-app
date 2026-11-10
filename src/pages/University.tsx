@@ -481,7 +481,7 @@ function setDescription(text: string) {
   if (el) el.setAttribute("content", text);
 }
 const DEFAULT_DESCRIPTION =
-  "دليل الجامعات السعودية: التخصصات وشروط القبول ومساراته والسكن، مع حاسبة الموزونة.";
+  "دليل الجامعات الحكومية في السعودية: شروط القبول، التخصصات، والسكن الجامعي لكل جامعة في صفحة واحدة.";
 
 export default function University() {
   const { id = "" } = useParams();
@@ -622,12 +622,6 @@ export default function University() {
     }
   }
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
-  // Quick jump links, built only from blocks that actually rendered.
-  const jumps = blocks
-    .map((b) => (b as { key?: string | null })?.key)
-    .filter((k): k is string => !!k && slotOrder.some((s) => s.key === k))
-    .filter((k) => k !== "cutoffs" || canViewCutoffSections)
-    .map((k) => ({ key: k, title: title(k as SlotKey) }));
   const glance = [
     programs.data?.length ? number(programs.data.length) + " تخصص" : "",
     trackList.length ? number(trackList.length) + " مسار قبول" : "",
@@ -680,18 +674,6 @@ export default function University() {
             <li key={g}>{g}</li>
           ))}
         </ul>
-      )}
-      {jumps.length > 2 && (
-        <nav className="jump-nav" aria-label="أقسام الصفحة">
-          {jumps.map((j) => (
-            <a key={j.key} href={"#" + j.key} onClick={(e) => {
-              e.preventDefault();
-              document.getElementById(j.key)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}>
-              {j.title}
-            </a>
-          ))}
-        </nav>
       )}
       {blocks}
       {loadingContent && <Loading />}

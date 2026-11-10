@@ -2094,11 +2094,7 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 /* v2.4 university page: at-a-glance chips, section jump bar, rich text */
 .glance{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0 0 12px;padding:0}
 .glance li{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:600;font-size:.92rem}
-.jump-nav{position:sticky;top:0;z-index:5;display:flex;gap:6px;overflow-x:auto;padding:8px 2px;margin:0 0 12px;background:var(--bg);border-bottom:1px solid var(--line);scrollbar-width:none}
-.jump-nav::-webkit-scrollbar{display:none}
-.jump-nav a{flex:0 0 auto;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);text-decoration:none;font-size:.9rem;color:inherit;white-space:nowrap}
-.jump-nav a:hover,.jump-nav a:focus-visible{border-color:currentColor}
-.profile-block{scroll-margin-top:64px}
+.profile-block{scroll-margin-top:16px}
 .rich ul{margin:6px 0 10px;padding-inline-start:22px}
 .rich li{margin:4px 0;line-height:1.8}
 .rich p{margin:0 0 8px}
