@@ -121,7 +121,11 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      onCancel={() => closeRef.current()}
+      onCancel={(e) => {
+        // Let the owner decide (e.g. unsaved changes) instead of Esc closing it.
+        e.preventDefault();
+        closeRef.current();
+      }}
       onClose={() => closeRef.current()}
     >
       <header className="modal-header">

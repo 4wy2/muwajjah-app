@@ -167,3 +167,31 @@ export async function insertDrafts(
   }
   return { ok, failed };
 }
+// Before saving an edit, make sure nobody changed the same fields since the
+// form was opened; otherwise their change would be overwritten silently.
+export function changedSince(
+  opened: Record<string, unknown>,
+  current: Record<string, unknown>,
+  fields: string[],
+): string[] {
+  const norm = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+  return fields.filter((f) => f in current && norm(opened[f]) !== norm(current[f]));
+}
+export async function assertUnchanged(
+  kind: ContentKind,
+  opened: Row,
+  fields: string[],
+) {
+  const { data, error } = await db
+    .from("guide_" + kind)
+    .select(fields.join(","))
+    .eq("id", opened.id)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("السجل ما عاد موجود. حدّث الصفحة.");
+  const changed = changedSince(opened, data as unknown as Record<string, unknown>, fields);
+  if (changed.length)
+    throw new Error(
+      "عدّل شخص آخر هذا السجل بعد ما فتحته. انسخ تعديلاتك، وحدّث الصفحة، ثم أعد المحاولة.",
+    );
+}
