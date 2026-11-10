@@ -126,12 +126,15 @@ export default function Access() {
                       description:
                         e.target.value === "plus"
                           ? "ستُتاح الميزة لمن تمنحه بلس فقط. بقية الزوار لن يروها ولن يروا أي إشارة للاشتراك ما لم تفعّل «إظهار عرض الاشتراك»."
-                          : "تغيير صلاحية الميزة لجميع الزوار والطلاب؟",
+                          : e.target.value === "members"
+                            ? "ستكون الميزة مجانية لكل من يسجل دخوله، ويُطلب من الزائر تسجيل الدخول. متأكد؟"
+                            : "تغيير صلاحية الميزة لجميع الزوار والطلاب؟",
                     })
                   }
                 >
                   <option value="hidden">مخفية</option>
-                  <option value="free">مجانية</option>
+                  <option value="free">مجانية للجميع</option>
+                  <option value="members">مجانية للمسجلين</option>
                   <option value="plus">بلس</option>
                 </select>
                 {f.access_mode === "plus" && (

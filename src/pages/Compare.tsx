@@ -33,6 +33,15 @@ export default function Compare() {
     );
   // A hidden feature does not exist for visitors, even by direct URL.
   if (feature.data === "hidden") return <Navigate to="/" replace />;
+  if (feature.data === "login")
+    return (
+      <Empty title="سجّل دخولك لمقارنة الجامعات">
+        <p>المقارنة متاحة مجانًا لكل من يسجل دخوله.</p>
+        <Link className="btn primary" to="/auth/login?next=%2Fcompare">
+          تسجيل الدخول
+        </Link>
+      </Empty>
+    );
   if (feature.data === "locked")
     return (
       <Empty title="مقارنة الجامعات ضمن مزايا بلس">

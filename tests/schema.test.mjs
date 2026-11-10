@@ -304,3 +304,26 @@ describe("migration 006: Zid paid orders", () => {
     expect((await q(`select count(*)::int n from guide_plus_entitlements where external_order_id='Z-9' and revoked_at is not null`))[0].n).toBe(1);
   });
 });
+
+describe("migration 007: members-only features", () => {
+  it("free for signed-in users, asks guests to sign in, and the server enforces it", async () => {
+    await root();
+    await db.exec(file("007_members_mode.sql"));
+    await db.exec(file("007_members_mode.sql"));
+    await as(OWNER);
+    await q(`select guide_owner_set_offer(false,'','','',null,'')`);
+    await q(`select guide_owner_set_feature('program_search','members',false)`);
+    await as(null);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("login");
+    expect(await fails(`select * from guide_search_programs('هند')`)).toBe(true);
+    await as(STUDENT);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("free");
+    expect((await q(`select program_name from guide_search_programs('هند')`)).length).toBe(1);
+    await root();
+    await db.exec(file("007_members_mode_rollback.sql"));
+    await as(null);
+    expect((await q(`select guide_feature_state('program_search') s`))[0].s).toBe("hidden");
+    await root();
+    await db.exec(file("007_members_mode.sql"));
+  });
+});

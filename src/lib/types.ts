@@ -71,7 +71,7 @@ export interface Member {
   can_publish: boolean;
   can_delete: boolean;
 }
-export type FeatureState = "free" | "plus" | "locked" | "hidden";
+export type FeatureState = "free" | "plus" | "locked" | "login" | "hidden";
 export type ContentKind =
   | "universities"
   | "programs"

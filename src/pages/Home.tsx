@@ -120,7 +120,7 @@ export default function Home() {
       {mode === "major" && (
         <MajorResults
           term={term}
-          allowed={canSearchMajor}
+          state={majorState}
           query={majors}
         />
       )}
@@ -203,14 +203,25 @@ export default function Home() {
 
 function MajorResults({
   term,
-  allowed,
+  state,
   query,
 }: {
   term: string;
-  allowed: boolean;
+  state: string;
   query: ReturnType<typeof useProgramSearch>;
 }) {
-  if (!allowed)
+  if (state === "login")
+    return (
+      <div className="panel locked-panel">
+        <Lock size={28} aria-hidden="true" />
+        <h2>سجّل دخولك للبحث بالتخصص</h2>
+        <p>اكتب التخصص اللي تبيه، وتطلع لك كل الجامعات اللي تدرّسه. متاح مجانًا لكل من يسجل دخوله.</p>
+        <Link className="btn primary" to={"/auth/login?next=" + encodeURIComponent("/?by=major")}>
+          تسجيل الدخول
+        </Link>
+      </div>
+    );
+  if (state !== "free" && state !== "plus")
     return (
       <div className="panel locked-panel">
         <Lock size={28} aria-hidden="true" />
