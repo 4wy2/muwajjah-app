@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, Lock } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useProgramSearch } from "../api/commerce";
+import { track } from "../lib/analytics";
 import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
@@ -25,6 +26,10 @@ export default function Home() {
   const [limit, setLimit] = useState(24);
   const canSearchMajor = majorState === "free" || majorState === "plus";
   const majors = useProgramSearch(term, mode === "major" && canSearchMajor);
+  useEffect(() => {
+    if (mode === "major" && majors.isSuccess && term.trim().length >= 2)
+      track("major_search", { term: term.trim().slice(0, 60), results: majors.data?.length || 0 });
+  }, [mode, majors.isSuccess, term]);
   const setMode = (m: string) =>
     setParams(
       (p) => {

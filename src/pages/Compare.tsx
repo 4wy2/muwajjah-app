@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { track } from "../lib/analytics";
 import { Link, Navigate } from "react-router-dom";
 import { X, GitCompareArrows } from "lucide-react";
 import { useCatalog, useFeature } from "../api/catalog";
@@ -20,6 +22,11 @@ export default function Compare() {
   const toggle = usePreferences((s) => s.toggleCompare);
   const toast = useToast();
   const selected = (q.data || []).filter((u) => ids.includes(u.id));
+  const canCompare = feature.data === "free" || feature.data === "plus";
+  useEffect(() => {
+    if (canCompare && selected.length >= 2)
+      track("compare_open", { count: selected.length });
+  }, [canCompare, selected.length]);
   if (feature.isPending || q.isPending) return <Loading />;
   if (feature.error || q.error)
     return (

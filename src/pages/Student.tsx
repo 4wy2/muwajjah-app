@@ -1,3 +1,4 @@
+import { track } from "../lib/analytics";
 import { useOffer } from "../api/commerce";
 import { useState } from "react";
 import { NavLink, Link, Outlet, Navigate, useLocation } from "react-router-dom";
@@ -352,6 +353,7 @@ export function Subscription() {
                 <>
                   <a
                     className="btn primary"
+                    onClick={() => track("subscribe_click", { from: "subscription_page" })}
                     href={o.purchase_url}
                     target="_blank"
                     rel="noopener noreferrer"

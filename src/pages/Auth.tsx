@@ -1,3 +1,4 @@
+import { track } from "../lib/analytics";
 import { GOOGLE_ONLY } from "../lib/config";
 import { useEffect, useState } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
@@ -260,6 +261,7 @@ export default function Auth({
                 setBusy(true);
                 setError("");
                 try {
+                  if (!admin) track("login_click", { method: "google" });
                   await signInWithGoogle(base + "/callback");
                 } catch (err) {
                   setError(friendly(err));

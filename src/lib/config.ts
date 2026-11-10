@@ -21,3 +21,6 @@ export const PREVIEW = true;
 // Sign-in is Google only (students and team). The owner grants team access by
 // the Google account's email from Admin > Team. Password reset links still work.
 export const GOOGLE_ONLY = true;
+
+// Google Analytics 4 Measurement ID (public, e.g. "G-XXXXXXXXXX"). Empty = off.
+export const GA_ID = "";

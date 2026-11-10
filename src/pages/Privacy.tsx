@@ -1,3 +1,4 @@
+import { GA_ID } from "../lib/config";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { CONTACT_EMAIL } from "../lib/config";
@@ -47,6 +48,19 @@ export default function Privacy() {
           <li>تستطيع حذف أي عنصر من مفضلتك أو أي نتيجة محفوظة من حسابك.</li>
         </ul>
       </section>
+
+      {GA_ID && (
+        <section className="profile-block">
+          <h2>إحصاءات الزيارات</h2>
+          <p>
+            نستخدم Google Analytics لمعرفة عدد الزوار والصفحات الأكثر زيارة
+            ومصادر الزيارات ونوع الجهاز، بهدف تحسين الموقع. تستخدم هذه الخدمة
+            ملفات تعريف الارتباط (كوكيز)، ولا نرسل لها اسمك أو بريدك أو درجاتك،
+            ونخفي آخر جزء من عنوان IP. يمكنك منعها من إعدادات متصفحك أو بإضافة
+            حظر التتبع.
+          </p>
+        </section>
+      )}
 
       <section className="profile-block">
         <h2>الخدمات التي يعتمد عليها الموقع</h2>

@@ -1,3 +1,4 @@
+import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 import { MapPin, ExternalLink, Calculator, LockKeyhole, Share2 } from "lucide-react";
@@ -495,6 +496,7 @@ export default function University() {
         (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
       );
       void interest("university", id);
+      track("university_view", { university: u.data.name });
     }
     return () => {
       document.title = "مُوجّه | دليلك للجامعة";

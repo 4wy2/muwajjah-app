@@ -19,6 +19,7 @@ import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
 import { PREVIEW } from "../lib/config";
+import { blockAnalytics, track, trackPage } from "../lib/analytics";
 export default function Layout() {
   const { user } = useAuth();
   const member = useMember();
@@ -30,6 +31,15 @@ export default function Layout() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
   const compareVisible = feature.data && feature.data !== "hidden";
+  // Visitors only: the team's own browsing is never counted.
+  useEffect(() => {
+    if (user && member.isPending) return;
+    if (member.data?.is_enabled) {
+      blockAnalytics();
+      return;
+    }
+    trackPage(location.pathname + location.search);
+  }, [location.pathname, location.search, user?.id, member.isPending]);
   const offer = useOffer();
   const plus = usePlus();
   useEffect(() => {
@@ -113,7 +123,11 @@ export default function Layout() {
             {offer.data?.season_label ? " لـ" + offer.data.season_label : ""}: ابحث
             بالتخصص في كل الجامعات، وقارن بينها، واطّلع على النسب السابقة.
           </span>
-          <Link className="btn primary compact" to="/student/subscription">
+          <Link
+            className="btn primary compact"
+            to="/student/subscription"
+            onClick={() => track("subscribe_click", { from: "promo_bar" })}
+          >
             اشترك{offer.data?.price_text ? " بـ" + offer.data.price_text : ""}
           </Link>
         </div>
