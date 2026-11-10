@@ -18,6 +18,7 @@ import { usePlus } from "../api/student";
 import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
+import { PREVIEW } from "../lib/config";
 export default function Layout() {
   const { user } = useAuth();
   const member = useMember();
@@ -100,6 +101,11 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      {PREVIEW && (
+        <div className="preview-bar" role="note">
+          نسخة تجريبية، والموقع قيد التجهيز.
+        </div>
+      )}
       {showPromo && (
         <div className="promo-bar" role="note">
           <span>

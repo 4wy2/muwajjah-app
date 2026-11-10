@@ -13,3 +13,7 @@ export const appUrl = (path: string) => location.origin + BASE + path;
 
 // Optional public contact for privacy/account requests. Leave empty to hide it.
 export const CONTACT_EMAIL = "";
+
+// Pre-launch preview: shows a small "beta" notice. Set to false on launch day
+// (and remove the robots noindex line in index.html, and public/robots.txt Disallow: /).
+export const PREVIEW = true;

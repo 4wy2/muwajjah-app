@@ -2087,3 +2087,4 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .plus-features { text-align: start; margin: 6px auto 4px; padding-inline-start: 20px; display: grid; gap: 6px; }
 .subscription .price { font-size: 1.6rem; font-weight: 800; color: var(--accent-dark); margin: 4px 0; }
 .row-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.preview-bar { text-align: center; font-size: 0.85rem; padding: 6px 12px; background: var(--surface); border-bottom: 1px dashed var(--line); color: var(--muted); }

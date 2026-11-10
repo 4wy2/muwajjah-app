@@ -1,5 +1,2 @@
 User-agent: *
-Disallow: /admin
-Disallow: /muwajjah-app/admin
-Disallow: /student
-Disallow: /muwajjah-app/student
+Disallow: /
