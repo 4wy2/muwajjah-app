@@ -1,6 +1,6 @@
 import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { MapPin, ExternalLink, Calculator, LockKeyhole, Share2 } from "lucide-react";
 import {
   useUniversity,
@@ -27,12 +27,14 @@ import {
   safeUrl,
   friendly,
   normalize,
+  number,
   isWeighted,
   hostOf,
   place,
 } from "../lib/utils";
 import { groupSections, slotOrder, type SlotKey } from "../lib/sections";
 import type { Program, Track, Section, University as Uni } from "../lib/types";
+import { RichText, sameText } from "../components/RichText";
 
 // Placeholders meaning "not stated" are stored honestly but never shown as data.
 const shown = (v?: string | null) => {
@@ -96,7 +98,7 @@ function SectionList({
       {items.map((s) => (
         <div className="flex-section" key={s.id}>
           {showTitles && <h3>{s.title}</h3>}
-          <p className="prewrap">{s.content}</p>
+          <RichText text={s.content} />
           <Source url={s.source_url} verified={s.verified_on} website={website} />
         </div>
       ))}
@@ -286,7 +288,7 @@ function TrackItem({
             ))}
         </div>
       )}
-      {t.requirements?.trim() && <p className="prewrap">{t.requirements}</p>}
+      <RichText text={t.requirements} />
       {!hideSource && (
         <Source url={t.source_url} verified={t.verified_on} website={website} />
       )}
@@ -432,13 +434,16 @@ function Cutoffs({ id, sections, website }: { id: string; sections: Section[]; w
   );
 }
 
-function Housing({ uni }: { uni: Uni }) {
+function Housing({ uni, sections }: { uni: Uni; sections: Section[] }) {
   const label = housing(uni.housing_status);
-  if (!label && !uni.housing_note?.trim()) return null;
+  // The summary note is skipped when a housing section already says the same.
+  const note = uni.housing_note?.trim() || "";
+  const repeated = !!note && sections.some((s) => sameText(note, s.content || ""));
+  if (!label && (!note || repeated)) return null;
   return (
     <>
       {label && <p className="housing-status">{label}</p>}
-      {uni.housing_note?.trim() && <p className="prewrap">{uni.housing_note}</p>}
+      {!repeated && <RichText text={note} />}
       <Source url={uni.housing_source_url} verified={uni.housing_verified_on} website={uni.website_url} />
     </>
   );
@@ -503,6 +508,14 @@ export default function University() {
       setDescription(DEFAULT_DESCRIPTION);
     };
   }, [id, u.data]);
+  // Links such as ?tab=admission (from the comparison page) open at that section.
+  const [params] = useSearchParams();
+  const target = params.get("tab");
+  const ready = !!u.data && !programs.isPending && !tracks.isPending && !sections.isPending;
+  useEffect(() => {
+    if (!ready || !target) return;
+    document.getElementById(target)?.scrollIntoView({ block: "start" });
+  }, [ready, target]);
   if (u.isPending) return <Loading />;
   if (u.error) return <ErrorState error={u.error} retry={() => u.refetch()} />;
   if (!u.data)
@@ -549,7 +562,7 @@ export default function University() {
       if (uni.description?.trim() || take("about").length)
         blocks.push(
           <Block id="about" title={title("about")} key="about">
-            {uni.description?.trim() && <p className="prewrap">{uni.description}</p>}
+            <RichText text={uni.description} />
             <Source url={uni.source_url} verified={uni.verified_on} website={web} />
             <SectionList items={take("about")} website={web} showTitles />
           </Block>,
@@ -585,7 +598,7 @@ export default function University() {
       if (housing(uni.housing_status) || uni.housing_note?.trim() || take("housing").length)
         blocks.push(
           <Block id="housing" title={title("housing")} key="housing">
-            <Housing uni={uni} />
+            <Housing uni={uni} sections={take("housing")} />
             <SectionList items={take("housing")} website={web} showTitles={take("housing").length > 1} />
           </Block>,
         );
@@ -609,6 +622,17 @@ export default function University() {
     }
   }
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
+  // Quick jump links, built only from blocks that actually rendered.
+  const jumps = blocks
+    .map((b) => (b as { key?: string | null })?.key)
+    .filter((k): k is string => !!k && slotOrder.some((s) => s.key === k))
+    .filter((k) => k !== "cutoffs" || canViewCutoffSections)
+    .map((k) => ({ key: k, title: title(k as SlotKey) }));
+  const glance = [
+    programs.data?.length ? number(programs.data.length) + " تخصص" : "",
+    trackList.length ? number(trackList.length) + " مسار قبول" : "",
+    housing(uni.housing_status) || "",
+  ].filter(Boolean);
   return (
     <article className="profile">
       <nav className="breadcrumbs" aria-label="مسار التنقل">
@@ -649,6 +673,25 @@ export default function University() {
             void sections.refetch();
           }}
         />
+      )}
+      {glance.length > 0 && (
+        <ul className="glance" aria-label="نظرة سريعة">
+          {glance.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
+      )}
+      {jumps.length > 2 && (
+        <nav className="jump-nav" aria-label="أقسام الصفحة">
+          {jumps.map((j) => (
+            <a key={j.key} href={"#" + j.key} onClick={(e) => {
+              e.preventDefault();
+              document.getElementById(j.key)?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}>
+              {j.title}
+            </a>
+          ))}
+        </nav>
       )}
       {blocks}
       {loadingContent && <Loading />}
