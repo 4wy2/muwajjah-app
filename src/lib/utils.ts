@@ -125,6 +125,8 @@ export function friendly(e: unknown) {
     return "يوجد سجل مطابق مسبقًا (قد يكون في السلة).";
   if (["PGRST205", "42P01", "PGRST202"].includes(err?.code || ""))
     return "هذه الميزة غير مفعّلة بعد. يرجى التواصل مع إدارة مُوجّه.";
+  if (/dynamically imported module|Importing a module script failed|Loading chunk/i.test(m))
+    return "تم تحديث الموقع. أعد تحميل الصفحة لتظهر النسخة الجديدة.";
   if (/fetch|network|timeout/i.test(m))
     return "تعذر الاتصال. تحقق من الإنترنت وحاول مجددًا.";
   if (/[\u0600-\u06ff]/.test(m)) return m;

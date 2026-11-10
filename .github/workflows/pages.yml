@@ -31,6 +31,24 @@ jobs:
       # GitHub Pages has no SPA rewrites: serve the app for unknown paths too,
       # so /muwajjah-app/universities/<id> works when opened directly.
       - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+      # Keep the files of the build that is live right now: a page opened
+      # before this update can still load the files it asks for.
+      - name: Keep the live build's files
+        continue-on-error: true
+        run: |
+          SITE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          curl -fsSL "$SITE/index.html" -o /tmp/live.html || exit 0
+          grep -oh 'assets/[A-Za-z0-9._-]*' /tmp/live.html | sort -u > /tmp/live-assets.txt
+          for f in $(cat /tmp/live-assets.txt); do
+            [ -f "dist/$f" ] || curl -fsSL "$SITE/$f" -o "dist/$f" || true
+          done
+          # Chunks the live entry file loads later (pages, admin).
+          for js in $(grep '\.js$' /tmp/live-assets.txt); do
+            [ -f "dist/$js" ] && grep -oh '[A-Za-z0-9_-]*-[A-Za-z0-9_-]\{8\}\.\(js\|css\)' "dist/$js" | sort -u | while read c; do
+              [ -f "dist/assets/$c" ] || curl -fsSL "$SITE/assets/$c" -o "dist/assets/$c" || true
+            done
+          done
+          ls dist/assets | wc -l
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

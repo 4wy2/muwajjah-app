@@ -16,6 +16,7 @@ import {
   SearchX,
 } from "lucide-react";
 import { friendly } from "../lib/utils";
+import { isStaleBuildError, reloadOnce } from "../lib/reload";
 export class ErrorBoundary extends Component<
   { children: ReactNode },
   { error: boolean }
@@ -23,6 +24,10 @@ export class ErrorBoundary extends Component<
   state = { error: false };
   static getDerivedStateFromError() {
     return { error: true };
+  }
+  componentDidCatch(e: unknown) {
+    // A page opened before a site update: reload once to get the new files.
+    if (isStaleBuildError(e)) reloadOnce();
   }
   render() {
     return this.state.error ? (

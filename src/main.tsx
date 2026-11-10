@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -22,27 +22,21 @@ import "@fontsource/tajawal/arabic-700.css";
 import "@fontsource/tajawal/arabic-800.css";
 import "@fontsource/tajawal/latin-400.css";
 import "./styles.css";
-const University = lazy(() => import("./pages/University"));
-const Compare = lazy(() => import("./pages/Compare"));
-const Privacy = lazy(() => import("./pages/Privacy"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Student = lazy(() => import("./pages/Student"));
-const Dashboard = lazy(() =>
-  import("./pages/Student").then((m) => ({ default: m.Dashboard })),
-);
-const Favorites = lazy(() =>
-  import("./pages/Student").then((m) => ({ default: m.Favorites })),
-);
-const Scores = lazy(() =>
-  import("./pages/Student").then((m) => ({ default: m.Scores })),
-);
-const Subscription = lazy(() =>
-  import("./pages/Student").then((m) => ({ default: m.Subscription })),
-);
-const Settings = lazy(() =>
-  import("./pages/Student").then((m) => ({ default: m.StudentSettings })),
-);
-const Admin = lazy(() => import("./admin/AdminApp"));
+// Student-facing pages ship in the main bundle: no extra file is fetched while
+// browsing, so a site update can never break a page that is already open.
+import University from "./pages/University";
+import Compare from "./pages/Compare";
+import Privacy from "./pages/Privacy";
+import Auth from "./pages/Auth";
+import Student, {
+  Dashboard,
+  Favorites,
+  Scores,
+  Subscription,
+  StudentSettings as Settings,
+} from "./pages/Student";
+import { lazyWithReload } from "./lib/reload";
+const Admin = lazyWithReload(() => import("./admin/AdminApp"));
 function LegacyDetail() {
   const loc = useLocation();
   const id = new URLSearchParams(loc.search).get("id");
