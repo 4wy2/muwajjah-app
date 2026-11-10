@@ -4,24 +4,8 @@ import {
   Lock,
   Landmark,
   BookOpen,
-  ClipboardCheck,
-  Building2,
-  MapPinned,
-  Trophy,
-  Sparkles,
-  Phone,
 } from "lucide-react";
 
-// What every university page covers (labels only, no counts).
-const INSIDE = [
-  { icon: ClipboardCheck, label: "شروط القبول" },
-  { icon: BookOpen, label: "التخصصات" },
-  { icon: Building2, label: "السكن" },
-  { icon: MapPinned, label: "الفروع" },
-  { icon: Trophy, label: "التصنيف" },
-  { icon: Sparkles, label: "البيئة الجامعية" },
-  { icon: Phone, label: "التواصل" },
-];
 import { Link, useSearchParams } from "react-router-dom";
 import { useProgramSearch } from "../api/commerce";
 import { track } from "../lib/analytics";
@@ -149,17 +133,6 @@ export default function Home() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </div>
-        <div className="hero-inside">
-          <span>في صفحة كل جامعة:</span>
-          <ul>
-            {INSIDE.map(({ icon: Icon, label }) => (
-              <li key={label}>
-                <Icon size={15} aria-hidden="true" />
-                {label}
-              </li>
-            ))}
-          </ul>
         </div>
       </section>
       {mode === "major" && (
