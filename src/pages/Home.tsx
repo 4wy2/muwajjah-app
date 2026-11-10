@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Search, Lock } from "lucide-react";
+import {
+  Search,
+  Lock,
+  Landmark,
+  BookOpen,
+} from "lucide-react";
+
 import { Link, useSearchParams } from "react-router-dom";
 import { useProgramSearch } from "../api/commerce";
 import { track } from "../lib/analytics";
@@ -23,7 +29,9 @@ export default function Home() {
   const [search, setSearch] = useState(params.get("q") || "");
   const term = useDebounce(search);
   const type = params.get("type") || "";
-  const [limit, setLimit] = useState(24);
+  const sort = params.get("sort") === "city" ? "city" : "name";
+  const compareOn = !!feature.data && feature.data !== "hidden";
+  const [limit, setLimit] = useState(30);
   const canSearchMajor = majorState === "free" || majorState === "plus";
   const majors = useProgramSearch(term, mode === "major" && canSearchMajor);
   useEffect(() => {
@@ -44,20 +52,23 @@ export default function Home() {
     () => [...new Set(universities.map((u) => u.type).filter(Boolean))].sort(),
     [q.data],
   );
-  const results = useMemo(
-    () =>
-      universities.filter(
-        (u) =>
-          (!term ||
-            normalize(u.name + " " + u.city + " " + u.region).includes(
-              normalize(term),
-            )) &&
-          (!type || u.type === type),
-      ),
-    [q.data, term, type],
-  );
+  const results = useMemo(() => {
+    const t = normalize(term);
+    const list = universities.filter(
+      (u) =>
+        (!t || normalize(u.name + " " + u.city + " " + u.region).includes(t)) &&
+        (!type || u.type === type),
+    );
+    // Name matches first, then city/region matches; then the chosen order.
+    const rank = (u: (typeof list)[number]) => (t && !normalize(u.name).includes(t) ? 1 : 0);
+    const key = (u: (typeof list)[number]) =>
+      sort === "city" ? (u.city || u.region || "ي") + " " + u.name : u.name.replace(/^(جامعة|الجامعة|كلية)\s+/, "");
+    return [...list].sort(
+      (a, b) => rank(a) - rank(b) || key(a).localeCompare(key(b), "ar"),
+    );
+  }, [q.data, term, type, sort]);
   useEffect(() => {
-    setLimit(24);
+    setLimit(30);
     setParams(
       (p) => {
         if (term) p.set("q", term);
@@ -73,6 +84,16 @@ export default function Home() {
       return () => clearTimeout(t);
     }
   }, [term, q.isSuccess, results.length, type, mode]);
+  const setSort = (v: string) =>
+    setParams(
+      (p) => {
+        if (v === "city") p.set("sort", "city");
+        else p.delete("sort");
+        return p;
+      },
+      { replace: true },
+    );
+  const searching = !!term.trim() || !!type;
   const setType = (t: string) =>
     setParams(
       (p) => {
@@ -84,44 +105,36 @@ export default function Home() {
     );
   return (
     <div className="catalog">
-      <div className="catalog-head">
-        <h1>دليل الجامعات السعودية</h1>
-        <p>معلومات القبول والتخصصات والسكن لكل جامعة، في مكان واحد.</p>
-      </div>
-      {majorState !== "hidden" && (
-        <div className="search-modes" role="tablist" aria-label="نوع البحث">
-          <button
-            role="tab"
-            aria-selected={mode === "uni"}
-            className={"chip-btn" + (mode === "uni" ? " active" : "")}
-            onClick={() => setMode("uni")}
-          >
-            الجامعات
-          </button>
-          <button
-            role="tab"
-            aria-selected={mode === "major"}
-            className={"chip-btn" + (mode === "major" ? " active" : "")}
-            onClick={() => setMode("major")}
-          >
-            {!canSearchMajor && <Lock size={14} aria-hidden="true" />} التخصصات
-          </button>
+      <section className="hero" aria-labelledby="hero-title">
+        <h1 id="hero-title">دليل الجامعات السعودية</h1>
+        <p className="hero-lead">
+          القبول والتخصصات والسكن لكل جامعة حكومية، مرتّبة في صفحة وحدة.
+        </p>
+        {majorState !== "hidden" && (
+          <div className="hero-modes" role="tablist" aria-label="نوع البحث">
+            <button role="tab" aria-selected={mode === "uni"} className={mode === "uni" ? "active" : ""} onClick={() => setMode("uni")}>
+              <Landmark size={16} aria-hidden="true" /> ابحث عن جامعة
+            </button>
+            <button role="tab" aria-selected={mode === "major"} className={mode === "major" ? "active" : ""} onClick={() => setMode("major")}>
+              {majorState === "locked" ? <Lock size={16} aria-hidden="true" /> : <BookOpen size={16} aria-hidden="true" />} ابحث عن تخصص
+            </button>
+          </div>
+        )}
+        <div className="search-box hero-search" id="search">
+          <Search size={20} aria-hidden="true" />
+          <input
+            aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
+            type="search"
+            placeholder={
+              mode === "major"
+                ? "اكتب التخصص، مثل: تمريض، هندسة كهربائية"
+                : "اكتب اسم الجامعة أو المدينة"
+            }
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-      )}
-      <div className="search-box">
-        <Search size={19} aria-hidden="true" />
-        <input
-          aria-label={mode === "major" ? "ابحث باسم التخصص" : "ابحث باسم الجامعة أو المدينة"}
-          type="search"
-          placeholder={
-            mode === "major"
-              ? "اكتب التخصص، مثل: تمريض، هندسة كهربائية"
-              : "ابحث باسم الجامعة أو المدينة"
-          }
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      </section>
       {mode === "major" && (
         <MajorResults
           term={term}
@@ -132,23 +145,18 @@ export default function Home() {
       {mode === "uni" && (
       <>
       <div className="results-bar">
-        {types.length > 1 && (
-          <div className="type-chips" role="group" aria-label="نوع الجامعة">
-            {["", ...types].map((t) => (
-              <button
-                key={t || "all"}
-                className={"chip-btn" + (type === t ? " active" : "")}
-                aria-pressed={type === t}
-                onClick={() => setType(t)}
-              >
-                {t || "الكل"}
-              </button>
-            ))}
-          </div>
-        )}
-        <span className="muted result-info" role="status">
-          {q.isSuccess ? number(results.length) + " جامعة" : ""}
-        </span>
+        <div className="results-tools">
+          <span className="result-count" role="status">
+            {q.isSuccess ? number(results.length) + (searching ? " نتيجة" : " جامعة") : ""}
+          </span>
+          <label className="sort-select">
+            <span>ترتيب</span>
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="name">حسب الاسم</option>
+              <option value="city">حسب المدينة</option>
+            </select>
+          </label>
+        </div>
       </div>
       {q.isPending ? (
         <div className="university-grid" aria-busy="true" aria-label="جارٍ تحميل الجامعات">
@@ -184,7 +192,7 @@ export default function Home() {
               <UniversityCard
                 university={u}
                 key={u.id}
-                compare={!!feature.data && feature.data !== "hidden"}
+                compare={compareOn}
               />
             ))}
           </div>
@@ -192,7 +200,7 @@ export default function Home() {
             <div className="load-more">
               <button
                 className="btn secondary compact"
-                onClick={() => setLimit((l) => l + 24)}
+                onClick={() => setLimit((l) => l + 30)}
               >
                 عرض المزيد ({number(results.length - limit)})
               </button>
