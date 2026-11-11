@@ -18,7 +18,8 @@ import { usePlus, usePlusFeatures } from "../api/student";
 import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
-import { PREVIEW } from "../lib/config";
+import { PREVIEW, TEAM_ONLY } from "../lib/config";
+import TeamGate from "./TeamGate";
 import { blockAnalytics, track, trackPage } from "../lib/analytics";
 export default function Layout() {
   const { user } = useAuth();
@@ -53,7 +54,10 @@ export default function Layout() {
     });
   }, [user?.id]);
   const plusFeatures = usePlusFeatures();
+  // Team-only mode: visitors outside the team see only the brand and sign-in.
+  const gated = TEAM_ONLY && !member.data?.is_enabled;
   const showPromo =
+    !gated &&
     !!offer.data?.commercial_enabled &&
     plusFeatures.length > 0 &&
     !plus.data &&
@@ -74,6 +78,7 @@ export default function Layout() {
               مُوجّه<small>بوصلتك للجامعة</small>
             </span>
           </Link>
+          {!gated && (
           <nav aria-label="القائمة الرئيسية">
             <NavLink to="/" end>
               <GraduationCap size={19} /> دليل الجامعات
@@ -92,6 +97,7 @@ export default function Layout() {
               </NavLink>
             )}
           </nav>
+          )}
           <div className="nav-actions">
             <ThemeToggle />
             {user ? (
@@ -113,7 +119,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      {PREVIEW && (
+      {PREVIEW && !gated && (
         <div className="preview-bar" role="note">
           نسخة تجريبية، والموقع قيد التجهيز.
         </div>
@@ -135,7 +141,9 @@ export default function Layout() {
         </div>
       )}
       <main id="main" className="shell main">
-        <Outlet />
+        <TeamGate>
+          <Outlet />
+        </TeamGate>
       </main>
       <footer className="shell footer">
         <Link className="footer-brand" to="/">

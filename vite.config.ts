@@ -6,6 +6,8 @@ import react from "@vitejs/plugin-react";
 //   otherwise → preview bar shown, noindex + robots.txt "Disallow: /".
 // On GitHub Pages it comes from the repository variable LAUNCH.
 const launch = process.env.LAUNCH === "1";
+// Team-only mode follows the launch switch unless set explicitly (TEAM_ONLY=0/1).
+const teamOnly = process.env.TEAM_ONLY ? process.env.TEAM_ONLY === "1" : !launch;
 // Absolute site address, used for the link-preview image.
 const siteUrl = (process.env.SITE_URL || "https://4wy2.github.io/muwajjah-app/").replace(/\/?$/, "/");
 
@@ -30,7 +32,7 @@ export default defineConfig({
   // "/" for Netlify; the GitHub Pages workflow sets BASE_PATH=/muwajjah-app/.
   base: process.env.BASE_PATH || "/",
   plugins: [react(), launchSwitch()],
-  define: { __LAUNCH__: JSON.stringify(launch) },
+  define: { __LAUNCH__: JSON.stringify(launch), __TEAM_ONLY__: JSON.stringify(teamOnly) },
   server: {
     host: "0.0.0.0",
     port: 4173,
