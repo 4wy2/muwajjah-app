@@ -384,3 +384,36 @@ describe("migration 010 (prepared): visitors cannot call admin functions", () =>
     expect(await fails(`select guide_is_owner()`)).toBe(false);
   });
 });
+
+describe("migration 011: private site switch", () => {
+  it("hides content from visitors and students while private, keeps the team working, and only the owner flips it", async () => {
+    await root();
+    await db.exec(`update guide_universities set published=true, deleted_at=null where id='${U}'`);
+    await db.exec(file("011_private_site.sql"));
+    await db.exec(file("011_private_site.sql"));
+    const unis = async () => (await q(`select count(*)::int n from guide_universities where published`))[0].n;
+    await as(null);
+    expect(await unis()).toBe(0);
+    expect((await q(`select guide_feature_state('comparison') s`))[0].s).toBe("hidden");
+    expect((await q(`select count(*)::int n from guide_public_program_counts()`))[0].n).toBe(0);
+    expect(await fails(`select guide_owner_set_private(false)`)).toBe(true);
+    await as(STUDENT);
+    expect(await unis()).toBe(0);
+    expect(await fails(`select guide_owner_set_private(false)`)).toBe(true);
+    expect(await fails(`update guide_site_settings set private=false`)).toBe(true);
+    await as(EDITOR);
+    expect(await unis()).toBeGreaterThan(0);
+    await as(OWNER);
+    expect(await unis()).toBeGreaterThan(0);
+    await q(`select guide_owner_set_private(false)`);
+    await as(null);
+    expect(await unis()).toBeGreaterThan(0);
+    expect((await q(`select guide_site_private() p`))[0].p).toBe(false);
+    await as(OWNER);
+    await q(`select guide_owner_set_private(true)`);
+    await root();
+    await db.exec(file("011_private_site_rollback.sql"));
+    await as(null);
+    expect(await unis()).toBeGreaterThan(0);
+  });
+});

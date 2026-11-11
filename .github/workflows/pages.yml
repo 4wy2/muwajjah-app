@@ -25,15 +25,26 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      # Custom domain: repository variable CUSTOM_DOMAIN (e.g. mowajeh.online).
+      # Set it only after the domain's DNS points to GitHub Pages.
+      - name: Site address
+        run: |
+          if [ -n "${{ vars.CUSTOM_DOMAIN }}" ]; then
+            echo "BASE_PATH=/" >> $GITHUB_ENV
+            echo "SITE_URL=https://${{ vars.CUSTOM_DOMAIN }}/" >> $GITHUB_ENV
+          else
+            echo "BASE_PATH=/${{ github.event.repository.name }}/" >> $GITHUB_ENV
+            echo "SITE_URL=https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/" >> $GITHUB_ENV
+          fi
       - run: npm run build
         env:
-          BASE_PATH: /${{ github.event.repository.name }}/
-          # Launch switch: repository Settings → Variables → LAUNCH = 1.
-          # Unset = preview bar + search engines blocked.
+          # Launch switch: repository Settings → Variables → LAUNCH = 1
+          # (no preview bar, robots.txt allows indexing). Who can open the site
+          # is the owner's private/public switch in Admin, not this.
           LAUNCH: ${{ vars.LAUNCH }}
-          # Team-only (site closed to the public): on until launch. TEAM_ONLY = 0 opens it alone.
-          TEAM_ONLY: ${{ vars.TEAM_ONLY }}
-          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+      - name: Custom domain file
+        if: ${{ vars.CUSTOM_DOMAIN != '' }}
+        run: echo "${{ vars.CUSTOM_DOMAIN }}" > dist/CNAME
       # GitHub Pages has no SPA rewrites: serve the app for unknown paths too,
       # so /muwajjah-app/universities/<id> works when opened directly.
       - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
@@ -42,7 +53,7 @@ jobs:
       - name: Keep the live build's files
         continue-on-error: true
         run: |
-          SITE="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          SITE="${SITE_URL%/}"
           curl -fsSL "$SITE/index.html" -o /tmp/live.html || exit 0
           grep -oh 'assets/[A-Za-z0-9._-]*' /tmp/live.html | sort -u > /tmp/live-assets.txt
           for f in $(cat /tmp/live-assets.txt); do

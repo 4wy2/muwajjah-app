@@ -104,3 +104,20 @@ export async function missingSearch(term: string) {
   }
 }
 export type { Program, Track, Section };
+// Private site switch (database/011). While on, only enabled team members can
+// read content; the database enforces it, this only decides what to show.
+export function useSitePrivate() {
+  return useQuery({
+    queryKey: ["site-private"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("guide_site_settings")
+        .select("private")
+        .maybeSingle();
+      // Before 011 exists the site is public, as it was.
+      if (error) return false;
+      return !!data?.private;
+    },
+  });
+}
