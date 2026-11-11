@@ -24,6 +24,9 @@ export default function Importer() {
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState("");
+  // Target university for content rows, so a file needs no university_id.
+  const [targetUni, setTargetUni] = useState("");
+  const needsUni = kind !== "universities";
   const [error, setError] = useState("");
   const [progress, setProgress] = useState("");
   const [failures, setFailures] = useState<{ name: string; reason: string }[]>([]);
@@ -57,15 +60,37 @@ export default function Importer() {
               ))}
             </select>
           </Field>
+          {needsUni && (
+            <Field label="الجامعة">
+              <select
+                value={targetUni}
+                disabled={busy || unis.isPending}
+                onChange={(e) => {
+                  setTargetUni(e.target.value);
+                  setDiff([]);
+                  setFileName("");
+                  setError("");
+                  setFailures([]);
+                }}
+              >
+                <option value="">اختر الجامعة</option>
+                {(unis.data || [])
+                  .filter((u) => !u.deleted_at)
+                  .map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {String(u.name)}
+                    </option>
+                  ))}
+              </select>
+            </Field>
+          )}
           <button
             className="btn secondary"
             onClick={() =>
               downloadJson("muwajjah-" + kind + "-template.json", {
                 [kind]: [
                   {
-                    ...(kind === "universities"
-                      ? {}
-                      : { university_id: "ضع معرّف الجامعة" }),
+
                     ...Object.fromEntries(
                       specs[kind].fields.map((f) => [
                         f.key,
@@ -87,7 +112,12 @@ export default function Importer() {
         </div>
         <label className="upload-zone">
           <UploadCloud size={34} />
-          <strong>{fileName || "اختر ملف JSON أو CSV"}</strong>
+          <strong>
+            {fileName ||
+              (needsUni && !targetUni
+                ? "اختر الجامعة أولًا"
+                : "اختر ملف JSON أو CSV")}
+          </strong>
           <span>حتى 5 ميجابايت · 2000 سجل</span>
           <input
             aria-label="رفع ملف الاستيراد"
@@ -95,6 +125,7 @@ export default function Importer() {
             accept=".json,.csv"
             disabled={
               busy ||
+              (needsUni && !targetUni) ||
               existing.isPending ||
               unis.isPending ||
               !!existing.error ||
@@ -111,7 +142,12 @@ export default function Importer() {
               try {
                 if (file.size > 5 * 1024 * 1024)
                   throw new Error("حجم الملف أكبر من 5 ميجابايت.");
-                const rows = parseImport(await file.text(), file.name, kind);
+                const rows = parseImport(await file.text(), file.name, kind).map(
+                  (r) =>
+                    needsUni && !r.university_id
+                      ? { ...r, university_id: targetUni }
+                      : r,
+                );
                 const result = makeDiff(
                   kind,
                   rows,
