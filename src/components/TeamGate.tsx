@@ -4,19 +4,21 @@ import { LockKeyhole } from "lucide-react";
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { db } from "../api/client";
 import { Loading } from "./ui";
-import { TEAM_ONLY } from "../lib/config";
+import { useSitePrivate } from "../api/catalog";
 
-// Team-only mode (before launch): the site opens only for team members the
-// owner has approved in Admin > Team. Sign-in and the legal pages stay open.
-// This hides the site from the public; student data is protected by the
-// database either way, and published university info is public by nature.
+// Private site (owner's switch in Admin > Access, database/011): the site opens
+// only for team members the owner approved in Admin > Team. Sign-in and the
+// legal pages stay open. The database itself refuses content to everyone else.
 const OPEN = ["/auth", "/privacy", "/terms"];
 
 export default function TeamGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const member = useMember();
   const { pathname, search } = useLocation();
-  if (!TEAM_ONLY || OPEN.some((p) => pathname.startsWith(p))) return <>{children}</>;
+  const priv = useSitePrivate();
+  if (OPEN.some((p) => pathname.startsWith(p))) return <>{children}</>;
+  if (priv.isPending) return <Loading />;
+  if (!priv.data) return <>{children}</>;
   if (loading || (user && member.isPending)) return <Loading />;
   if (member.data?.is_enabled) return <>{children}</>;
   const next = encodeURIComponent(pathname + search);

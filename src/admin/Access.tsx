@@ -14,6 +14,8 @@ import {
 } from "../components/ui";
 import { date, friendly } from "../lib/utils";
 import { useOffer, type OfferSettings } from "../api/commerce";
+import { useSitePrivate } from "../api/catalog";
+import { Lock, Globe } from "lucide-react";
 interface Student {
   user_id: string;
   email: string;
@@ -63,6 +65,7 @@ export default function Access() {
         title="بلس والوصول"
         description="إعداد الميزات وإدارة اشتراكات الطلاب."
       />
+      <SitePanel />
       {offer.data && (
         <OfferPanel
           key={JSON.stringify(offer.data)}
@@ -423,6 +426,63 @@ function OfferPanel({
           {offer.commercial_enabled ? "إيقاف الاشتراكات" : "تشغيل الاشتراكات"}
         </button>
       </div>
+    </section>
+  );
+}
+
+// Owner's site switch (database/011): private = only the team can open and
+// read the site; public = everyone. Nothing is deleted either way.
+function SitePanel() {
+  const priv = useSitePrivate();
+  const toast = useToast();
+  const [confirm, setConfirm] = useState(false);
+  const [busy, setBusy] = useState(false);
+  if (priv.isPending) return null;
+  const isPrivate = !!priv.data;
+  return (
+    <section className={"panel site-panel" + (isPrivate ? " is-private" : " is-public")}>
+      <div className="site-state">
+        {isPrivate ? <Lock size={22} aria-hidden="true" /> : <Globe size={22} aria-hidden="true" />}
+        <div>
+          <h2>{isPrivate ? "الموقع مقفل على الفريق" : "الموقع مفتوح للجميع"}</h2>
+          <p className="muted">
+            {isPrivate
+              ? "الزوار والطلاب يشوفون صفحة «قيد التجهيز»، وقاعدة البيانات ترفض تعطيهم أي محتوى. أعضاء الفريق المفعّلون يشوفون كل شي."
+              : "أي أحد يقدر يتصفح الموقع، ومحركات البحث تقدر تأرشفه."}
+          </p>
+        </div>
+      </div>
+      <button
+        className={"btn " + (isPrivate ? "primary" : "secondary")}
+        disabled={busy}
+        onClick={() => setConfirm(true)}
+      >
+        {isPrivate ? "افتح الموقع للجميع" : "اقفل الموقع على الفريق"}
+      </button>
+      <Confirm
+        open={confirm}
+        busy={busy}
+        title={isPrivate ? "فتح الموقع للجميع" : "قفل الموقع على الفريق"}
+        body={
+          isPrivate
+            ? "بيصير الموقع ومحتواه متاح لأي زائر، ويقدر قوقل يأرشفه. تقدر تقفله مرة ثانية متى ما بغيت."
+            : "بيختفي الموقع عن الزوار والطلاب فورًا، ويبقى للفريق فقط. ما ينحذف أي شي."
+        }
+        onClose={() => setConfirm(false)}
+        onConfirm={async () => {
+          setBusy(true);
+          try {
+            await rpc("guide_owner_set_private", { make_private: !isPrivate });
+            await queryClient.invalidateQueries();
+            toast(isPrivate ? "الموقع مفتوح الحين للجميع" : "الموقع مقفل الحين على الفريق");
+            setConfirm(false);
+          } catch (err) {
+            toast(friendly(err), true);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
     </section>
   );
 }

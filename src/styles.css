@@ -2140,3 +2140,10 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .team-gate svg{color:var(--accent)}
 .team-gate h1{font-size:22px;margin:4px 0 0}
 .team-gate p{color:var(--muted);margin:0 0 6px;line-height:1.8}
+.site-panel{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;border-inline-start:4px solid var(--accent)}
+.site-panel.is-public{border-inline-start-color:#2e9e6b}
+.site-state{display:flex;gap:12px;align-items:flex-start;flex:1;min-width:240px}
+.site-state h2{font-size:17px;margin:0 0 2px}
+.site-state p{margin:0;font-size:14px;line-height:1.7}
+.site-state svg{color:var(--accent);margin-top:3px}
+.site-panel.is-public .site-state svg{color:#2e9e6b}

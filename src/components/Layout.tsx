@@ -18,7 +18,8 @@ import { usePlus, usePlusFeatures } from "../api/student";
 import { useToast } from "./ui";
 import { friendly } from "../lib/utils";
 import { ThemeToggle } from "./Appearance";
-import { PREVIEW, TEAM_ONLY } from "../lib/config";
+import { PREVIEW } from "../lib/config";
+import { useSitePrivate } from "../api/catalog";
 import TeamGate from "./TeamGate";
 import { blockAnalytics, track, trackPage } from "../lib/analytics";
 export default function Layout() {
@@ -55,7 +56,17 @@ export default function Layout() {
   }, [user?.id]);
   const plusFeatures = usePlusFeatures();
   // Team-only mode: visitors outside the team see only the brand and sign-in.
-  const gated = TEAM_ONLY && !member.data?.is_enabled;
+  const sitePrivate = useSitePrivate();
+  const gated = sitePrivate.data !== false && !member.data?.is_enabled;
+  // While private, ask search engines not to index anything.
+  useEffect(() => {
+    if (!sitePrivate.data) return;
+    const m = document.createElement("meta");
+    m.name = "robots";
+    m.content = "noindex, nofollow";
+    document.head.appendChild(m);
+    return () => m.remove();
+  }, [sitePrivate.data]);
   const showPromo =
     !gated &&
     !!offer.data?.commercial_enabled &&
