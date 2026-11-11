@@ -13,6 +13,13 @@
 - **Netlify:** Site settings → Environment variables → `LAUNCH` = `1` و`SITE_URL` = عنوان الموقع النهائي مع `/` في آخره، ثم Deploy.
 - `SITE_URL` يُستخدم لصورة معاينة الروابط (`og.jpg`). الافتراضي: عنوان GitHub Pages.
 
+## Netlify + mowajeh.online (المعتمد)
+1. Netlify → Add new site → Import from Git → GitHub → `4wy2/muwajjah-app` → فرع `main`. الإعدادات تُقرأ من `netlify.toml` (البناء، Node 22، `LAUNCH=1`، `SITE_URL`، توجيه الصفحات الداخلية).
+2. جرّب الرابط المؤقت `*.netlify.app`: صفحة «قيد التجهيز» للزائر، وفتح رابط جامعة مباشرة يعمل.
+3. Domain management → Add domain → `mowajeh.online` (+ `www`). سجلات DNS عند المزود: `A @ 75.2.60.5` و`CNAME www <الموقع>.netlify.app`، أو Netlify DNS إن كان الدومين عليه أصلًا. HTTPS يتفعّل تلقائيًا.
+4. Supabase → Authentication → URL Configuration: Site URL `https://mowajeh.online`، وأضف `https://mowajeh.online/**` و`https://<الموقع>.netlify.app/**`.
+5. قفل الموقع وفتحه: لوحة الإدارة → «بلس والوصول» → أول بطاقة.
+
 ## الاستضافة
 - **الحالية:** GitHub Pages (`.github/workflows/pages.yml`). كل دفع إلى `main` ينشر تلقائيًا. الصفحات الداخلية تعمل عبر `404.html` (نسخة من `index.html`)، لكن الخادم يرجع رمز 404 للزاحف عند فتح رابط داخلي مباشرة. لا يؤثر على الطالب، لكنه يضعف الأرشفة.
 - **عند الإطلاق على الدومين:** Netlify جاهز (`netlify.toml`: build `npm run build`، publish `dist`، Node 22، إعادة توجيه SPA بحالة 200). أو Cloudflare Pages بنفس الأوامر وملف `public/_redirects`.

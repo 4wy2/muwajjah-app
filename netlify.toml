@@ -3,6 +3,10 @@
   publish = "dist"
 [build.environment]
   NODE_VERSION = "22"
+  # Launch build: no preview bar, robots.txt allows indexing. Who can open the
+  # site is the owner's private/public switch in Admin (database/011).
+  LAUNCH = "1"
+  SITE_URL = "https://mowajeh.online/"
 [[redirects]]
   from = "/*"
   to = "/index.html"
