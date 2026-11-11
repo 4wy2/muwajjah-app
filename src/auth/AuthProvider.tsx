@@ -25,12 +25,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     let current: string | undefined;
+    let first = true;
     const sync = (user: User | null, recovery = false) => {
       if (!active) return;
-      if (current !== user?.id) {
-        queryClient.clear();
-        current = user?.id;
-      }
+      // Clear on a real account switch only, not on the first check at page
+      // load: that would throw away the restored public content cache.
+      if (!first && current !== user?.id) queryClient.clear();
+      current = user?.id;
+      first = false;
       setState((s) => ({
         user,
         loading: false,

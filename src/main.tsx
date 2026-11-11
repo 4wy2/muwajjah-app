@@ -7,7 +7,8 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { createSyncStoragePersister } from "@tanstack/query-sync-storage-persister";
 import { BASE } from "./lib/config";
 import { queryClient } from "./api/client";
 import { AuthProvider } from "./auth/AuthProvider";
@@ -48,10 +49,37 @@ function LegacyDetail() {
     />
   );
 }
+// Browser cache for public content only (catalog, university pages). Never
+// accounts, entitlements, paid data, team previews or empty answers (a
+// private-site visitor gets none and must not keep that after launch).
+const PERSISTED = new Set(["catalog", "university", "programs", "tracks", "sections"]);
+const storage = (() => {
+  try {
+    const t = "__mowajeh";
+    window.localStorage.setItem(t, t);
+    window.localStorage.removeItem(t);
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+})();
+const persister = createSyncStoragePersister({ storage, key: "mowajeh-cache" });
+const persistOptions = {
+  persister,
+  maxAge: 6 * 60 * 60_000,
+  buster: __BUILD_ID__,
+  dehydrateOptions: {
+    shouldDehydrateQuery: (q: { queryKey: readonly unknown[]; state: { status: string; data: unknown } }) =>
+      q.state.status === "success" &&
+      PERSISTED.has(String(q.queryKey[0])) &&
+      q.queryKey[2] !== true &&
+      (Array.isArray(q.state.data) ? q.state.data.length > 0 : q.state.data != null),
+  },
+};
 function App() {
   return (
     <BrowserRouter basename={BASE || undefined}>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
         <AuthProvider>
           <ToastProvider>
             <ErrorBoundary>
@@ -110,7 +138,7 @@ function App() {
             </ErrorBoundary>
           </ToastProvider>
         </AuthProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </BrowserRouter>
   );
 }

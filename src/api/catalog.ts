@@ -8,6 +8,16 @@ import type {
   Cutoff,
   FeatureState,
 } from "../lib/types";
+// Public content changes rarely; returning visitors reuse it from the browser
+// cache (persisted in main.tsx) for up to this long instead of refetching.
+export const CONTENT_STALE = 3 * 60 * 60_000;
+// Only the columns the public pages show: less data per visit.
+const PUBLIC_COLUMNS: Record<string, string> = {
+  programs:
+    "id,university_id,name,college,degree,gender,campus,admission_route,source_url,verified_on",
+  sections:
+    "id,university_id,title,content,display_order,source_url,verified_on,feature_key",
+};
 export const getUniversities = () =>
   allRows<University>("guide_universities", (q) =>
     q.eq("published", true).is("deleted_at", null).order("name").order("id"),
@@ -16,7 +26,7 @@ export const useCatalog = () =>
   useQuery({
     queryKey: ["catalog"],
     queryFn: getUniversities,
-    staleTime: 300_000,
+    staleTime: CONTENT_STALE,
   });
 // preview = team preview of what students will see once the university is
 // published (drafts included, trash and hidden-by-hand items excluded). The
@@ -32,6 +42,7 @@ export function useUniversity(id: string, preview = false) {
       return data as University | null;
     },
     enabled: !!id,
+    staleTime: preview ? 60_000 : CONTENT_STALE,
   });
 }
 export function useUniversityContent<T>(
@@ -50,8 +61,9 @@ export function useUniversityContent<T>(
           if (kind === "tracks") q = q.neq("source_url", "").not("verified_on", "is", null);
         } else q = q.eq("published", true);
         return q.order(kind === "sections" ? "display_order" : "name").order("id");
-      }),
+      }, preview ? "*" : PUBLIC_COLUMNS[kind] || "*"),
     enabled: !!id,
+    staleTime: preview ? 60_000 : CONTENT_STALE,
   });
 }
 export function useFeature(key: string, userId?: string) {

@@ -30,7 +30,11 @@ export default defineConfig({
   // "/" for Netlify; the GitHub Pages workflow sets BASE_PATH=/muwajjah-app/.
   base: process.env.BASE_PATH || "/",
   plugins: [react(), launchSwitch()],
-  define: { __LAUNCH__: JSON.stringify(launch) },
+  define: {
+    __LAUNCH__: JSON.stringify(launch),
+    // New deploy = new browser cache, so visitors never mix two versions.
+    __BUILD_ID__: JSON.stringify(String(Date.now())),
+  },
   server: {
     host: "0.0.0.0",
     port: 4173,
