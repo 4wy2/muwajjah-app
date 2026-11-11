@@ -14,10 +14,9 @@ export const appUrl = (path: string) => location.origin + BASE + path;
 // Optional public contact for privacy/account requests. Leave empty to hide it.
 export const CONTACT_EMAIL = "";
 
-// Pre-launch preview bar. Controlled by the build-time launch switch (LAUNCH=1),
-// together with robots noindex and robots.txt — see vite.config.ts.
-declare const __LAUNCH__: boolean;
-export const PREVIEW = !__LAUNCH__;
+// The "preview" bar is retired: who can open the site is now the owner's
+// private/public switch (Admin > Access, database/011).
+export const PREVIEW = false;
 
 // Sign-in is Google only (students and team). The owner grants team access by
 // the Google account's email from Admin > Team. Password reset links still work.

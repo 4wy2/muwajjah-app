@@ -146,7 +146,7 @@ export function usePlus() {
 const PLUS_LABELS: Record<string, string> = {
   program_search: "البحث بالتخصص في كل الجامعات",
   comparison: "مقارنة الجامعات",
-  historical_cutoffs: "نسب القبول السابقة (تقديرية)",
+  historical_cutoffs: "نسب القبول السابقة",
 };
 export function usePlusFeatures(): string[] {
   const { user } = useAuth();
