@@ -14,9 +14,14 @@ export const appUrl = (path: string) => location.origin + BASE + path;
 // Optional public contact for privacy/account requests. Leave empty to hide it.
 export const CONTACT_EMAIL = "";
 
-// Pre-launch preview: shows a small "beta" notice. Set to false on launch day
-// (and remove the robots noindex line in index.html, and public/robots.txt Disallow: /).
-export const PREVIEW = true;
+// Pre-launch preview bar. Controlled by the build-time launch switch (LAUNCH=1),
+// together with robots noindex and robots.txt — see vite.config.ts.
+declare const __LAUNCH__: boolean;
+export const PREVIEW = !__LAUNCH__;
+// Team-only mode: the site opens only for approved team members. On until
+// launch (LAUNCH=1), or switch off alone with TEAM_ONLY=0 at build time.
+declare const __TEAM_ONLY__: boolean;
+export const TEAM_ONLY = __TEAM_ONLY__;
 
 // Sign-in is Google only (students and team). The owner grants team access by
 // the Google account's email from Admin > Team. Password reset links still work.

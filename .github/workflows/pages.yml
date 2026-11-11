@@ -28,6 +28,12 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # Launch switch: repository Settings → Variables → LAUNCH = 1.
+          # Unset = preview bar + search engines blocked.
+          LAUNCH: ${{ vars.LAUNCH }}
+          # Team-only (site closed to the public): on until launch. TEAM_ONLY = 0 opens it alone.
+          TEAM_ONLY: ${{ vars.TEAM_ONLY }}
+          SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
       # GitHub Pages has no SPA rewrites: serve the app for unknown paths too,
       # so /muwajjah-app/universities/<id> works when opened directly.
       - run: cp dist/index.html dist/404.html && touch dist/.nojekyll

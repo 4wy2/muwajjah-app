@@ -78,6 +78,26 @@ export default function Home() {
       { replace: true },
     );
   }, [term, setParams]);
+  // Coming back from a university page returns to the same place in the list.
+  const scrollKey = "home-scroll:" + params.toString();
+  useEffect(() => {
+    if (!q.isSuccess) return;
+    let saved = 0;
+    try {
+      saved = Number(sessionStorage.getItem(scrollKey) || 0);
+    } catch {
+      /* storage unavailable */
+    }
+    if (saved > 0) requestAnimationFrame(() => window.scrollTo(0, saved));
+    return () => {
+      try {
+        sessionStorage.setItem(scrollKey, String(window.scrollY));
+      } catch {
+        /* storage unavailable */
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q.isSuccess]);
   useEffect(() => {
     if (mode === "uni" && term.trim() && q.isSuccess && results.length === 0 && !type) {
       const t = setTimeout(() => void missingSearch(normalize(term)), 1000);

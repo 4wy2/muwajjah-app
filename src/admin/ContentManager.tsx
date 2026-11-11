@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Pencil,
@@ -22,6 +22,7 @@ import {
   invalidateContent,
   publishUniversityWithContent,
   describePublish,
+  assertUnchanged,
 } from "../api/admin";
 import { specs, sanitize, fieldValueLabels, rowLabel } from "./specs";
 import {
@@ -94,6 +95,20 @@ function Manager({
   } | null>(null);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState("");
+  // Unsaved edits: warn before closing the form or leaving the page.
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+  const closeForm = () => {
+    if (busy) return;
+    if (dirty && !window.confirm("عندك تعديلات ما انحفظت. تبي تقفل بدون حفظ؟")) return;
+    setDirty(false);
+    setEditing(undefined);
+  };
   const [page, setPage] = useState(0);
   const toast = useToast();
   const edit = member.is_owner || member.can_edit;
@@ -468,15 +483,15 @@ function Manager({
       <Modal
         open={editing !== undefined}
         title={(editing ? "تعديل " : "إضافة ") + spec.singular}
-        onClose={() => {
-          if (!busy) setEditing(undefined);
-        }}
+        onClose={closeForm}
       >
         {editing !== undefined && (
           <form
             key={editing?.id || "new"}
+            onInput={() => setDirty(true)}
             onSubmit={async (e) => {
               e.preventDefault();
+              if (busy) return;
               setFormError("");
               const raw = Object.fromEntries(new FormData(e.currentTarget));
               if (editing && kind !== "universities")
@@ -484,8 +499,10 @@ function Manager({
               setBusy(true);
               try {
                 const payload = sanitize(kind, raw);
+                if (editing) await assertUnchanged(kind, editing, Object.keys(payload));
                 await saveRecord(kind, payload, editing?.id);
                 await invalidateContent();
+                setDirty(false);
                 setEditing(undefined);
                 toast("تم حفظ السجل");
               } catch (err) {

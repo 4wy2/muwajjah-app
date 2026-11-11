@@ -18,17 +18,16 @@ export const useCatalog = () =>
     queryFn: getUniversities,
     staleTime: 300_000,
   });
-export function useUniversity(id: string) {
+// preview = team preview of what students will see once the university is
+// published (drafts included, trash and hidden-by-hand items excluded). The
+// database only returns drafts to team members, so visitors get nothing extra.
+export function useUniversity(id: string, preview = false) {
   return useQuery({
-    queryKey: ["university", id],
+    queryKey: ["university", id, preview],
     queryFn: async () => {
-      const { data, error } = await db
-        .from("guide_universities")
-        .select("*")
-        .eq("id", id)
-        .eq("published", true)
-        .is("deleted_at", null)
-        .maybeSingle();
+      let q = db.from("guide_universities").select("*").eq("id", id).is("deleted_at", null);
+      if (!preview) q = q.eq("published", true);
+      const { data, error } = await q.maybeSingle();
       if (error) throw error;
       return data as University | null;
     },
@@ -38,18 +37,20 @@ export function useUniversity(id: string) {
 export function useUniversityContent<T>(
   kind: "programs" | "tracks" | "sections",
   id: string,
+  preview = false,
 ) {
   return useQuery({
-    queryKey: [kind, id],
+    queryKey: [kind, id, preview],
     queryFn: () =>
-      allRows<T>("guide_" + kind, (q) =>
-        q
-          .eq("university_id", id)
-          .eq("published", true)
-          .is("deleted_at", null)
-          .order(kind === "sections" ? "display_order" : "name")
-          .order("id"),
-      ),
+      allRows<T>("guide_" + kind, (q) => {
+        q = q.eq("university_id", id).is("deleted_at", null);
+        if (preview) {
+          q = q.or("publication_excluded.is.null,publication_excluded.eq.false");
+          // Tracks are published only with a source and a review date.
+          if (kind === "tracks") q = q.neq("source_url", "").not("verified_on", "is", null);
+        } else q = q.eq("published", true);
+        return q.order(kind === "sections" ? "display_order" : "name").order("id");
+      }),
     enabled: !!id,
   });
 }

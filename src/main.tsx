@@ -27,6 +27,7 @@ import "./styles.css";
 import University from "./pages/University";
 import Compare from "./pages/Compare";
 import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 import Auth from "./pages/Auth";
 import Student, {
   Dashboard,
@@ -63,6 +64,7 @@ function App() {
                     <Route path="universities/:id" element={<University />} />
                     <Route path="compare" element={<Compare />} />
                     <Route path="privacy" element={<Privacy />} />
+                    <Route path="terms" element={<Terms />} />
                     <Route path="auth/:mode" element={<Auth />} />
                     <Route element={<RequireUser />}>
                       <Route path="student" element={<Student />}>

@@ -21,8 +21,10 @@ export const queryClient = new QueryClient({
       gcTime: 300_000,
       retry: 1,
       refetchOnWindowFocus: true,
+      // Offline: fail and show the retry message instead of loading forever.
+      networkMode: "always",
     },
-    mutations: { retry: false },
+    mutations: { retry: false, networkMode: "always" },
   },
 });
 export async function rpc<T>(

@@ -9,7 +9,7 @@ import {
   useFeature,
   interest,
 } from "../api/catalog";
-import { useAuth } from "../auth/AuthProvider";
+import { useAuth, useMember } from "../auth/AuthProvider";
 import { useScores, saveScore } from "../api/student";
 import { UniversityLogo, FavoriteButton } from "../components/UniversityCard";
 import {
@@ -481,14 +481,18 @@ function setDescription(text: string) {
   if (el) el.setAttribute("content", text);
 }
 const DEFAULT_DESCRIPTION =
-  "دليل الجامعات السعودية: التخصصات وشروط القبول ومساراته والسكن، مع حاسبة الموزونة.";
+  "دليل الجامعات الحكومية في السعودية: شروط القبول، التخصصات، والسكن الجامعي لكل جامعة في صفحة واحدة.";
 
 export default function University() {
   const { id = "" } = useParams();
-  const u = useUniversity(id);
-  const programs = useUniversityContent<Program>("programs", id);
-  const tracks = useUniversityContent<Track>("tracks", id);
-  const sections = useUniversityContent<Section>("sections", id);
+  const [search] = useSearchParams();
+  const member = useMember();
+  // Team-only preview; for visitors the parameter is ignored.
+  const preview = search.get("preview") === "1" && !!member.data?.is_enabled;
+  const u = useUniversity(id, preview);
+  const programs = useUniversityContent<Program>("programs", id, preview);
+  const tracks = useUniversityContent<Track>("tracks", id, preview);
+  const sections = useUniversityContent<Section>("sections", id, preview);
   const { user } = useAuth();
   const cutoffFeature = useFeature("historical_cutoffs", user?.id);
   const canViewCutoffSections =
@@ -500,8 +504,10 @@ export default function University() {
       setDescription(
         (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
       );
-      void interest("university", id);
-      track("university_view", { university: u.data.name });
+      if (!preview) {
+        void interest("university", id);
+        track("university_view", { university: u.data.name });
+      }
     }
     return () => {
       document.title = "مُوجّه | دليلك للجامعة";
@@ -622,19 +628,17 @@ export default function University() {
     }
   }
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
-  // Quick jump links, built only from blocks that actually rendered.
-  const jumps = blocks
-    .map((b) => (b as { key?: string | null })?.key)
-    .filter((k): k is string => !!k && slotOrder.some((s) => s.key === k))
-    .filter((k) => k !== "cutoffs" || canViewCutoffSections)
-    .map((k) => ({ key: k, title: title(k as SlotKey) }));
   const glance = [
-    programs.data?.length ? number(programs.data.length) + " تخصص" : "",
     trackList.length ? number(trackList.length) + " مسار قبول" : "",
     housing(uni.housing_status) || "",
   ].filter(Boolean);
   return (
     <article className="profile">
+      {preview && (
+        <p className="notice" role="note">
+          معاينة للفريق: هذا ما سيظهر للطالب بعد نشر الجامعة ومحتواها.
+        </p>
+      )}
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link to="/">دليل الجامعات</Link>
         <span aria-hidden="true">/</span>
@@ -680,18 +684,6 @@ export default function University() {
             <li key={g}>{g}</li>
           ))}
         </ul>
-      )}
-      {jumps.length > 2 && (
-        <nav className="jump-nav" aria-label="أقسام الصفحة">
-          {jumps.map((j) => (
-            <a key={j.key} href={"#" + j.key} onClick={(e) => {
-              e.preventDefault();
-              document.getElementById(j.key)?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}>
-              {j.title}
-            </a>
-          ))}
-        </nav>
       )}
       {blocks}
       {loadingContent && <Loading />}

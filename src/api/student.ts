@@ -141,23 +141,38 @@ export function usePlus() {
 // they already hold Plus (granted manually by the owner), or the owner has
 // switched on the public offer for some feature (state "locked"). During the
 // silent free launch both are false, so no pricing/plus hints appear.
+// Names of the features that are Plus right now (state "locked" for others,
+// "plus" for holders), so offers never mention a hidden or free feature.
+const PLUS_LABELS: Record<string, string> = {
+  program_search: "البحث بالتخصص في كل الجامعات",
+  comparison: "مقارنة الجامعات",
+  historical_cutoffs: "نسب القبول السابقة (تقديرية)",
+};
+export function usePlusFeatures(): string[] {
+  const { user } = useAuth();
+  const states = useQuery({
+    queryKey: ["commercial-states", user?.id || "guest"],
+    staleTime: 60_000,
+    queryFn: () => featureStates(),
+  });
+  const keys = Object.keys(PLUS_LABELS);
+  return keys
+    .filter((_, i) => states.data?.[i] === "locked" || states.data?.[i] === "plus")
+    .map((k) => PLUS_LABELS[k]);
+}
+const featureStates = () =>
+  Promise.all(
+    Object.keys(PLUS_LABELS).map((k) =>
+      rpc<string>("guide_feature_state", { target_feature: k }).catch(() => "hidden"),
+    ),
+  );
 export function useCommercialVisible() {
   const { user } = useAuth();
   const plus = usePlus();
   const states = useQuery({
     queryKey: ["commercial-states", user?.id || "guest"],
     staleTime: 60_000,
-    queryFn: async () => {
-      const keys = ["historical_cutoffs", "comparison", "program_search"];
-      const out = await Promise.all(
-        keys.map((k) =>
-          rpc<string>("guide_feature_state", { target_feature: k }).catch(
-            () => "hidden",
-          ),
-        ),
-      );
-      return out;
-    },
+    queryFn: () => featureStates(),
   });
   const offer = useOffer();
   return (
