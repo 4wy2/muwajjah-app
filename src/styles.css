@@ -2710,22 +2710,18 @@ dialog.upgrade-sheet {
 .up-faq summary::after { content: "+"; color: var(--accent); font-weight: 800; }
 .up-faq details[open] summary::after { content: "−"; }
 .up-faq details p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; line-height: 1.8; }
-/* Footer on phones: centred, links in a tidy 2×2 grid, small print stacked. */
+/* Footer on phones: small and quiet, like most sites. */
 @media (max-width: 640px) {
-  .sf-inner { text-align: center; gap: 16px; padding-top: 24px; }
-  .sf-brand { display: grid; justify-items: center; }
-  .sf-brand p { font-size: 13.5px; max-width: 34ch; margin-top: 6px; }
-  .sf-links {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 0; justify-content: stretch;
-    border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--bg);
-  }
-  .sf-links a {
-    padding: 12px 8px; font-size: 14px; font-weight: 600; color: var(--text);
-    border-bottom: 1px solid var(--line);
-  }
-  .sf-links a:nth-child(odd) { border-inline-end: 1px solid var(--line); }
-  .sf-links a:nth-last-child(-n + 2):nth-child(odd),
-  .sf-links a:nth-last-child(-n + 2):nth-child(odd) ~ a { border-bottom: 0; }
-  .sf-links a:only-child, .sf-links a:last-child:nth-child(odd) { grid-column: 1 / -1; border-inline-end: 0; }
-  .sf-bottom { justify-content: center; flex-direction: column; align-items: center; gap: 4px; border-top: 0; padding-top: 0; }
+  .site-footer { margin-top: 16px; }
+  .sf-inner { text-align: center; gap: 10px; padding-top: 18px; padding-bottom: 14px; justify-items: center; }
+  .sf-brand p { display: none; }
+  .site-footer .footer-brand { font-size: 17px; gap: 6px; }
+  .site-footer .footer-brand .brand-icon { width: 24px; height: 24px; border-radius: 7px; }
+  .site-footer .footer-brand .brand-icon svg { width: 15px; height: 15px; }
+  .sf-links { justify-content: center; gap: 6px 16px; padding-top: 0; }
+  .sf-links a { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .sf-bottom { justify-content: center; border-top: 0; padding-top: 0; }
+  .sf-bottom small { font-size: 11.5px; }
+  .sf-bottom small + small { display: none; }
 }
+@media (max-width: 380px) { .sf-links { gap: 6px 11px; } .sf-links a { font-size: 12.5px; } }
