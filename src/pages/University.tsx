@@ -742,26 +742,34 @@ export default function University() {
             )}
           </p>
         </div>
+      </header>
+      <div className="hero-bar">
+        {glance.length > 0 && (
+          <ul className="glance" aria-label="نظرة سريعة">
+            {glance.map(([g, Icon]) => (
+              <li key={g}>
+                <Icon size={15} aria-hidden="true" />
+                {g}
+              </li>
+            ))}
+          </ul>
+        )}
         <div className="profile-actions">
-          <FavoriteButton kind="university" id={id} label={uni.name} />
-          <ShareButton name={uni.name} />
           {safeUrl(web) && (
-            <a className="btn secondary compact" href={safeUrl(web)} target="_blank" rel="noreferrer">
-              موقع الجامعة <ExternalLink size={14} />
+            <a
+              className="btn secondary compact site-link"
+              href={safeUrl(web)}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="موقع الجامعة"
+            >
+              <span className="lbl">موقع الجامعة</span> <ExternalLink size={15} />
             </a>
           )}
+          <ShareButton name={uni.name} />
+          <FavoriteButton kind="university" id={id} label={uni.name} />
         </div>
-      </header>
-      {glance.length > 0 && (
-        <ul className="glance" aria-label="نظرة سريعة">
-          {glance.map(([g, Icon]) => (
-            <li key={g}>
-              <Icon size={15} aria-hidden="true" />
-              {g}
-            </li>
-          ))}
-        </ul>
-      )}
+      </div>
       </div>
       {contentError && (
         <ErrorState
