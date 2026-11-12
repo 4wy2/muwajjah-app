@@ -10,8 +10,6 @@ import {
   X,
   ArrowUp,
   ChevronDown,
-  Moon,
-  Sun,
 } from "lucide-react";
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { usePreferences } from "../lib/store";
@@ -47,11 +45,6 @@ function AccountMenu({
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const location = useLocation();
-  const theme = usePreferences((s) => s.theme);
-  const setTheme = usePreferences((s) => s.setTheme);
-  const dark =
-    theme === "dark" ||
-    (theme === "system" && document.documentElement.dataset.theme === "dark");
   useEffect(() => setOpen(false), [location.pathname]);
   useEffect(() => {
     if (!open) return;
@@ -97,10 +90,6 @@ function AccountMenu({
               <ShieldCheck size={17} /> لوحة الإدارة
             </Link>
           )}
-          <button role="menuitem" onClick={() => setTheme(dark ? "light" : "dark")}>
-            {dark ? <Sun size={17} /> : <Moon size={17} />}
-            {dark ? "الوضع النهاري" : "الوضع الليلي"}
-          </button>
           <button role="menuitem" className="danger" onClick={onSignOut}>
             <LogOut size={17} /> تسجيل الخروج
           </button>
@@ -231,7 +220,7 @@ export default function Layout() {
             </nav>
           )}
           <div className="tb-actions">
-            {!user && <ThemeToggle />}
+            <ThemeToggle />
             {user ? (
               <AccountMenu
                 initial={initial}
