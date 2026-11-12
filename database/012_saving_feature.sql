@@ -14,6 +14,7 @@ begin;
 create schema if not exists backup;
 create table if not exists backup.guide_feature_flags_20261112 as
   select * from public.guide_feature_flags;
+revoke all on backup.guide_feature_flags_20261112 from anon, authenticated;
 
 insert into public.guide_feature_flags (feature_key, access_mode, show_offer)
 values ('saving', 'members', false)
