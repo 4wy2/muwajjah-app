@@ -11,6 +11,7 @@ import {
   Crown,
   History,
   ClipboardCheck,
+  Activity,
   type LucideIcon,
 } from "lucide-react";
 import type { AdminAccess } from "./access";
@@ -22,6 +23,7 @@ const Access = lazy(() => import("./Access"));
 const Workspace = lazy(() => import("./UniversityWorkspace"));
 const Audit = lazy(() => import("./Audit"));
 const Readiness = lazy(() => import("./Readiness"));
+const SiteHealth = lazy(() => import("./Health"));
 export interface AdminModule {
   path: string;
   label: string;
@@ -33,6 +35,13 @@ export interface AdminModule {
 }
 // Add a module once here: routes and navigation use the same registry.
 export const adminModules: AdminModule[] = [
+  {
+    path: "health",
+    label: "صحة الموقع",
+    icon: Activity,
+    access: "owner",
+    element: <SiteHealth />,
+  },
   {
     path: "readiness",
     label: "جاهزية البيانات",

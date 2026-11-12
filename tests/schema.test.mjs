@@ -512,3 +512,29 @@ describe("migration 013: filters and comparison sharing", () => {
     await db.exec(`update guide_site_settings set private=true`);
   });
 });
+
+describe("migration 014: site health (owner only, read only)", () => {
+  it("answers the owner, refuses everyone else, and rolls back", async () => {
+    await root();
+    await db.exec(`alter table auth.users add column if not exists last_sign_in_at timestamptz`);
+    await db.exec(file("014_site_health.sql"));
+    await db.exec(file("014_site_health.sql"));
+    await as(OWNER);
+    const [{ h }] = await q(`select guide_owner_site_health() h`);
+    expect(h.db_bytes).toBeGreaterThan(0);
+    expect(h.users_total).toBeGreaterThan(0);
+    expect(Array.isArray(h.views)).toBe(true);
+    expect(typeof h.private).toBe("boolean");
+    await as(STUDENT);
+    expect(await fails(`select guide_owner_site_health()`)).toBe(true);
+    await as(EDITOR);
+    expect(await fails(`select guide_owner_site_health()`)).toBe(true);
+    await as(null);
+    expect(await fails(`select guide_owner_site_health()`)).toBe(true);
+    await root();
+    await db.exec(file("014_site_health_rollback.sql"));
+    await as(OWNER);
+    expect(await fails(`select guide_owner_site_health()`)).toBe(true);
+    await root();
+  });
+});

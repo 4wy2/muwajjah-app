@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, AlertTriangle } from "lucide-react";
+import { useSiteHealth } from "./Health";
+import { alerts, healthChecks } from "./health";
 import { useAuth, useMember, useAssignments } from "../auth/AuthProvider";
 import { Loading, ErrorState, Empty, ErrorBoundary, useActiveNavIntoView } from "../components/ui";
 import { adminModules } from "./modules";
@@ -10,6 +12,8 @@ export default function AdminLayout() {
   const q = useMember();
   const assignments = useAssignments();
   const location = useLocation();
+  const health = useSiteHealth(!!q.data?.is_owner && !!q.data?.is_enabled);
+  const urgent = health.data ? alerts(healthChecks(health.data)) : [];
   useActiveNavIntoView(location.pathname + (q.data ? ":ready" : ""));
   if (q.isPending) return <Loading />;
   if (q.error) return <ErrorState error={q.error} retry={() => q.refetch()} />;
@@ -71,6 +75,19 @@ export default function AdminLayout() {
         </div>
       </aside>
       <section className="workspace-body">
+        {urgent.length > 0 && !location.pathname.endsWith("/health") && (
+          <Link
+            to="/admin/health"
+            className={"health-bar " + (urgent.some((c) => c.level === "bad") ? "bad" : "warn")}
+          >
+            <AlertTriangle size={17} aria-hidden="true" />
+            <span>
+              {urgent.length === 1 ? "تنبيه يحتاج انتباهك: " : urgent.length + " تنبيهات تحتاج انتباهك، أولها: "}
+              <strong>{urgent[0].title}</strong>
+            </span>
+            <span className="health-go">افتحي صحة الموقع</span>
+          </Link>
+        )}
         <ErrorBoundary key={location.pathname}>
           <Suspense fallback={<Loading />}>
             <Outlet />
