@@ -247,12 +247,3 @@
 .hc-tip { display: flex; gap: 8px; align-items: flex-start; margin-top: 20px; }
 .hc-tip svg { flex: 0 0 auto; margin-top: 3px; }
 @media (max-width: 600px) { .hc-list { grid-template-columns: 1fr; } .hc-stats { grid-template-columns: repeat(2, 1fr); } }
-
-/* Alert bar shown on every admin page while something needs the owner */
-.health-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; margin-bottom: 14px; text-decoration: none; font-size: 14px; flex-wrap: wrap; }
-.health-bar.warn { background: #fff4d9; color: #8a5a00; }
-.health-bar.bad { background: #fdecea; color: #a1281c; }
-.health-bar .health-go { margin-inline-start: auto; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .health-bar.warn { background: rgba(240,180,60,.16); color: #f3c25e; } :root:not([data-theme="light"]) .health-bar.bad { background: rgba(220,60,50,.18); color: #ff8a80; } }
-[data-theme="dark"] .health-bar.warn { background: rgba(240,180,60,.16); color: #f3c25e; }
-[data-theme="dark"] .health-bar.bad { background: rgba(220,60,50,.18); color: #ff8a80; }
