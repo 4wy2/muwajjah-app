@@ -17,6 +17,22 @@ import { safeReturnTo, type Portal } from "../auth/redirects";
 import { useAuth } from "../auth/AuthProvider";
 import { Field, Loading } from "../components/ui";
 import { friendly } from "../lib/utils";
+const NEXT_KEY = "mowajeh-next";
+function rememberNext(next: string | null) {
+  try {
+    if (next) sessionStorage.setItem(NEXT_KEY, next);
+    else sessionStorage.removeItem(NEXT_KEY);
+  } catch {
+    /* private mode: fall back to the home page */
+  }
+}
+function readNext() {
+  try {
+    return sessionStorage.getItem(NEXT_KEY);
+  } catch {
+    return null;
+  }
+}
 export default function Auth({
   portal = "student",
   mode: requestedMode,
@@ -37,11 +53,18 @@ export default function Auth({
     queryKey: ["google-enabled"],
     queryFn: () => rpc<boolean>("guide_google_enabled"),
   });
-  const target = safeReturnTo(params.get("next"), portal);
+  // Where to go after signing in: the page the visitor came from, kept across
+  // the Google round trip (which drops query strings), or the home page.
+  const [storedNext] = useState(readNext);
+  const target = safeReturnTo(params.get("next") || storedNext, portal);
   useEffect(() => {
     setMessage("");
     setError("");
   }, [mode]);
+  // The remembered page is used once, by the sign-in that stored it.
+  useEffect(() => {
+    if (user && !recovering) rememberNext(null);
+  }, [user?.id, recovering]);
   if (loading) return <Loading />;
   if (
     user &&
@@ -262,6 +285,7 @@ export default function Auth({
                 setError("");
                 try {
                   if (!admin) track("login_click", { method: "google" });
+                  rememberNext(params.get("next"));
                   await signInWithGoogle(base + "/callback");
                 } catch (err) {
                   setError(friendly(err));

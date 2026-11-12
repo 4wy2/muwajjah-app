@@ -43,7 +43,9 @@ describe("Login return destinations", () => {
     ]) {
       expect(safeReturnTo(value, "admin")).toBe("/admin/universities");
     }
-    expect(safeReturnTo("/auth/reset", "student")).toBe("/student/dashboard");
+    expect(safeReturnTo("/auth/reset", "student")).toBe("/");
+    // No "next": students land on the home page, not their portal.
+    expect(safeReturnTo(null, "student")).toBe("/");
   });
 });
 describe("Admin module visibility (RLS remains authoritative)", () => {

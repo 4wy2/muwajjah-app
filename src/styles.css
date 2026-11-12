@@ -2540,3 +2540,24 @@ dialog form > .btn.primary:last-child {
   .toast { bottom: calc(18px + env(safe-area-inset-bottom)); }
 }
 @media (max-width: 360px) { .mobile-tabs a svg { display: none; } }
+/* Tab row v2: one segmented control, same language as the laptop menu. */
+@media (max-width: 899px) {
+  .mobile-tabs { background: transparent; border-bottom: 0; }
+  .mt-inner {
+    gap: 3px; padding: 4px; margin-top: 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: 0 1px 2px #2a1f5a0a;
+  }
+  .mobile-tabs a { min-height: 40px; border-radius: 10px; font-size: 13.5px; gap: 6px; }
+  .mobile-tabs a:active { background: var(--bg); }
+  .mobile-tabs a.active { background: var(--accent); color: #fff; box-shadow: 0 4px 10px #6a4fcf33; }
+  .mobile-tabs a.active svg { color: #fff; }
+  .main { padding-top: 12px; }
+}
+[data-theme="dark"] .mobile-tabs a.active { color: #16151e; }
+[data-theme="dark"] .mobile-tabs a.active svg { color: #16151e; }
+@media (max-width: 640px) {
+  .hero-modes { display: flex; width: 100%; }
+  .hero-modes button { flex: 1; justify-content: center; white-space: nowrap; }
+}
+@media (max-width: 380px) { .hero-modes button { font-size: 12.5px; padding: 6px 8px; gap: 4px; } }

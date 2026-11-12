@@ -54,7 +54,7 @@ export default function Compare() {
       <Empty title="مقارنة الجامعات ضمن مزايا بلس">
         <Link
           className="btn primary"
-          to={user ? "/student/subscription" : "/auth/login"}
+          to={user ? "/student/subscription" : "/auth/login?next=%2Fcompare"}
         >
           عرض حسابي
         </Link>

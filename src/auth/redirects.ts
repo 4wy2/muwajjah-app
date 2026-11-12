@@ -1,7 +1,7 @@
 export type Portal = "student" | "admin";
 export function safeReturnTo(value: string | null, portal: Portal) {
   const fallback =
-    portal === "admin" ? "/admin/universities" : "/student/dashboard";
+    portal === "admin" ? "/admin/universities" : "/";
   if (
     !value ||
     !value.startsWith("/") ||

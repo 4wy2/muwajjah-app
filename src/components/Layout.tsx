@@ -175,7 +175,14 @@ export default function Layout() {
                 </button>
               </>
             ) : (
-              <Link className="btn primary compact login-btn" to="/auth/login">
+              <Link
+                className="btn primary compact login-btn"
+                to={
+                  location.pathname.startsWith("/auth")
+                    ? "/auth/login"
+                    : "/auth/login?next=" + encodeURIComponent(location.pathname + location.search)
+                }
+              >
                 تسجيل الدخول <ArrowIcon />
               </Link>
             )}

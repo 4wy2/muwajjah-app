@@ -301,7 +301,7 @@ export function CalculatorForm({
           {!user && (
             <>
               {" "}
-              <Link to="/auth/login">سجّل دخولك</Link> لحفظ نتائجك.
+              <Link to={"/auth/login?next=" + encodeURIComponent(location.pathname)}>سجّل دخولك</Link> لحفظ نتائجك.
             </>
           )}
         </p>
@@ -448,7 +448,7 @@ function Cutoffs({ id, sections, website }: { id: string; sections: Section[]; w
         <div className="plus-callout">
           <LockKeyhole size={22} />
           <p>نسب القبول السابقة متاحة لمشتركي مُوجّه بلس.</p>
-          <Link to={user ? "/student/subscription" : "/auth/login"} className="btn secondary compact">
+          <Link to={user ? "/student/subscription" : "/auth/login?next=" + encodeURIComponent(location.pathname)} className="btn secondary compact">
             {user ? "تفاصيل الاشتراك" : "سجّل دخولك"}
           </Link>
         </div>
