@@ -7,6 +7,7 @@ import {
   Check,
   Sparkles,
   ShieldCheck,
+  Bookmark,
   X,
   ArrowLeft,
   type LucideIcon,
@@ -14,7 +15,12 @@ import {
 import { track } from "../lib/analytics";
 import { useAuth } from "../auth/AuthProvider";
 import { useOffer } from "../api/commerce";
-import { usePlus, usePlusFeatureKeys, useCommercialVisible } from "../api/student";
+import {
+  usePlus,
+  usePlusFeatureKeys,
+  useCommercialVisible,
+  useFeatureStates,
+} from "../api/student";
 import { useUpgradeSheet } from "../lib/store";
 import { Loading, ErrorState } from "../components/ui";
 import { date } from "../lib/utils";
@@ -46,13 +52,53 @@ export const BENEFITS: Record<
     to: "/",
     cta: "افتح أي جامعة",
   },
+  saving: {
+    icon: Bookmark,
+    title: "احفظ مفضلتك ونتائجك",
+    text: "احفظ الجامعات والتخصصات اللي تعجبك ونتائج الموزونة، وارجع لها من أي جهاز.",
+    to: "/student/favorites",
+    cta: "افتح مفضلتك",
+  },
 };
+
+// Short verbs for the headline, and names for the "what stays free" answer.
+// Both follow whatever the owner set, so the page never promises a feature
+// that is hidden or lists as free one that needs the upgrade.
+const VERBS: Record<string, string> = {
+  program_search: "ابحث بالتخصص",
+  comparison: "قارن",
+  historical_cutoffs: "شوف نسب القبول",
+  saving: "احفظ اختياراتك",
+};
+const FREE_NAMES: Record<string, string> = {
+  program_search: "البحث بالتخصص",
+  comparison: "مقارنة الجامعات",
+  historical_cutoffs: "نسب القبول السابقة",
+  saving: "حفظ المفضلة ونتائج الموزونة",
+};
+const BASE_FREE = ["صفحات الجامعات كاملة", "السكن", "الشروط", "حاسبة الموزونة"];
+export const joinAr = (items: string[]) =>
+  items.length < 2 ? items.join("") : items.slice(0, -1).join("، ") + "، و" + items[items.length - 1];
+export function headline(keys: string[]) {
+  const verbs = keys.map((k) => VERBS[k]).filter(Boolean);
+  return verbs.length ? "قرّر بثقة: " + joinAr(verbs) : "أدوات تساعدك وقت القرار";
+}
+export function freeAnswer(states: Record<string, string | null> | undefined) {
+  const extra = Object.keys(FREE_NAMES).filter(
+    (k) => states?.[k] === "free" || states?.[k] === "login",
+  );
+  const needsLogin = extra.some((k) => states?.[k] === "login");
+  return (
+    joinAr([...BASE_FREE, ...extra.map((k) => FREE_NAMES[k])]) +
+    ". كلها مجانية" +
+    (needsLogin ? "، وبعضها يحتاج تسجيل دخول فقط." : ".")
+  );
+}
 
 // How the purchase works, answered before the student asks.
 const FAQ: [string, string][] = [
   ["كيف تنفتح المزايا؟", "تدفع من صفحة الدفع، وتنفتح المزايا على حسابك تلقائيًا. لازم تدفع بنفس إيميل حسابك."],
   ["هل يتجدد الدفع؟", "لا. دفعة وحدة للموسم، وما فيه تجديد تلقائي."],
-  ["وش يبقى مجاني؟", "صفحات الجامعات كاملة، والسكن، والشروط، وحاسبة الموزونة، والمفضلة. هذي مجانية دائمًا."],
 ];
 
 function useOfferInfo() {
@@ -191,6 +237,7 @@ export function UpgradeView() {
   const plus = usePlus();
   const keys = usePlusFeatureKeys();
   const { offer, o, term } = useOfferInfo();
+  const states = useFeatureStates();
   if (offer.isPending || (user && plus.isPending)) return <Loading />;
   if (plus.error) return <ErrorState error={plus.error} retry={() => plus.refetch()} />;
   const benefits = keys.map((k) => BENEFITS[k]).filter(Boolean);
@@ -228,7 +275,7 @@ export function UpgradeView() {
         <span className="up-badge">
           <Sparkles size={15} aria-hidden="true" /> ترقية الحساب
         </span>
-        <h1>قرّر بثقة: ابحث، قارن، وشوف نسب القبول</h1>
+        <h1>{headline(keys)}</h1>
         <p className="muted">أدوات إضافية لوقت القرار. ومعلومات الجامعات الأساسية تبقى مجانية لك دائمًا.</p>
       </header>
       <section className="plan-card" aria-label="الترقية">
@@ -259,7 +306,7 @@ export function UpgradeView() {
         </div>
       </section>
       <section className="up-faq" aria-label="أسئلة شائعة">
-        {FAQ.map(([q, a]) => (
+        {[...FAQ, ["وش يبقى مجاني؟", freeAnswer(states)] as [string, string]].map(([q, a]) => (
           <details key={q}>
             <summary>{q}</summary>
             <p>{a}</p>

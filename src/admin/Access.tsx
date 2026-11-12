@@ -100,7 +100,7 @@ export default function Access() {
         ) : (
           flags.data
             ?.filter((f) =>
-              ["comparison", "historical_cutoffs", "program_search"].includes(
+              ["comparison", "historical_cutoffs", "program_search", "saving"].includes(
                 f.feature_key,
               ),
             )
@@ -111,7 +111,9 @@ export default function Access() {
                     ? "مقارنة الجامعات"
                     : f.feature_key === "program_search"
                       ? "البحث بالتخصص"
-                      : "النسب السابقة"}
+                      : f.feature_key === "saving"
+                        ? "حفظ المفضلة ونتائج الموزونة"
+                        : "النسب السابقة"}
                 </label>
                 <select
                   id={f.feature_key}

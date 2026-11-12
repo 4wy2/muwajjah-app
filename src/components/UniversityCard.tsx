@@ -10,7 +10,8 @@ import {
 import type { University } from "../lib/types";
 import { safeUrl, friendly, housing, place } from "../lib/utils";
 import { useAuth } from "../auth/AuthProvider";
-import { useFavorites, useToggleFavorite } from "../api/student";
+import { useFavorites, useToggleFavorite, useSaving } from "../api/student";
+import { useUpgradeSheet } from "../lib/store";
 import { usePreferences } from "../lib/store";
 import { useToast } from "./ui";
 export function UniversityLogo({
@@ -50,9 +51,14 @@ export function FavoriteButton({
   const q = useFavorites();
   const m = useToggleFavorite();
   const toast = useToast();
+  const saving = useSaving();
   const favorite = q.data?.find(
     (f) => f[(kind + "_id") as "university_id" | "program_id"] === id,
   );
+  // The owner decides who can save. Hidden: no star at all (saved rows stay
+  // in the student's account). Upgrade-only: the star explains the upgrade.
+  // Removing an existing favorite always works.
+  if (saving.state === "hidden") return null;
   return (
     <button
       className={"icon-btn favorite " + (favorite ? "selected" : "")}
@@ -62,10 +68,15 @@ export function FavoriteButton({
       aria-pressed={!!favorite}
       disabled={m.isPending || (!!user && q.isPending)}
       onClick={async () => {
-        if (!user) {
+        if (!user && saving.state !== "locked") {
           nav("/auth/login?next=" + encodeURIComponent(loc.pathname));
           return;
         }
+        if (!favorite && saving.state === "locked") {
+          useUpgradeSheet.getState().show("saving");
+          return;
+        }
+        if (!user) return;
         if (q.error) {
           toast(friendly(q.error), true);
           return;

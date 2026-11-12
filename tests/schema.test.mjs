@@ -442,3 +442,44 @@ describe("migration 010 together with 011", () => {
     await db.exec(file("010_revoke_anon_admin_rpc_rollback.sql"));
   });
 });
+
+describe("migration 012: saving as an owner-controlled feature", () => {
+  it("keeps saving open to signed-in students by default, and the owner can gate it", async () => {
+    await root();
+    await db.exec(`update guide_universities set published=true, deleted_at=null where id='${U}'`);
+    await db.exec(`update guide_site_settings set private=false`);
+    await db.exec(file("012_saving_feature.sql"));
+    await db.exec(file("012_saving_feature.sql"));
+    const save = () => fails(`insert into guide_student_favorites(user_id, university_id) values ($1, $2)`, [STUDENT, U]);
+    const clear = async () => { await root(); await db.exec(`delete from guide_student_favorites where user_id='${STUDENT}'`); };
+    await as(STUDENT);
+    expect(await save()).toBe(false); // default 'members': unchanged behaviour
+    await clear();
+    await as(STUDENT);
+    expect(await fails(`select guide_owner_set_feature('saving','plus',false)`)).toBe(true);
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('saving','plus',false)`);
+    const S3 = "55555555-5555-4555-8555-555555555555";
+    await root();
+    await db.exec(`insert into auth.users(id,email) values ('${S3}','s3@x.sa') on conflict do nothing`);
+    await as(S3);
+    expect((await q(`select guide_has_plus() p`))[0].p).toBe(false);
+    expect(await fails(`insert into guide_student_favorites(user_id, university_id) values ($1, $2)`, [S3, U])).toBe(true); // no upgrade: refused by the database
+    expect(await fails(`select * from guide_student_favorites`)).toBe(false); // own data still readable
+    await as(STUDENT);
+    expect((await q(`select guide_has_plus() p`))[0].p).toBe(true);
+    expect(await save()).toBe(false); // upgraded: allowed
+    await clear();
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('saving','hidden',false)`);
+    await as(STUDENT);
+    expect(await save()).toBe(true);
+    expect(await fails(`insert into guide_student_scores(user_id, university_id, school, aptitude, achievement, result) values ($1,$2,90,90,90,90)`, [STUDENT, U])).toBe(true);
+    await root();
+    await db.exec(file("012_saving_feature_rollback.sql"));
+    await as(STUDENT);
+    expect(await save()).toBe(false);
+    await clear();
+    await db.exec(`update guide_site_settings set private=true`);
+  });
+});

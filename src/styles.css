@@ -2725,3 +2725,6 @@ dialog.upgrade-sheet {
   .sf-bottom small + small { display: none; }
 }
 @media (max-width: 380px) { .sf-links { gap: 6px 11px; } .sf-links a { font-size: 12.5px; } }
+
+/* Inline text button inside a sentence (e.g. calculator note). */
+.text-btn.inline { display: inline; min-height: 0; padding: 0; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }

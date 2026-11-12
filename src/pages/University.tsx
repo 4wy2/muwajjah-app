@@ -34,7 +34,7 @@ import {
   interest,
 } from "../api/catalog";
 import { useAuth, useMember } from "../auth/AuthProvider";
-import { useScores, saveScore } from "../api/student";
+import { useScores, saveScore, useSaving } from "../api/student";
 import { UniversityLogo, FavoriteButton } from "../components/UniversityCard";
 import {
   Empty,
@@ -181,6 +181,8 @@ export function CalculatorForm({
   const [result, setResult] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const savingFeature = useSaving().state;
+  const canSave = !!user && (savingFeature === "free" || savingFeature === "plus");
   const track = weighted.find((t) => t.id === trackId) || weighted[0];
   useEffect(() => {
     setValues(["", "", ""]);
@@ -210,7 +212,7 @@ export function CalculatorForm({
           try {
             const score = calculate(track, values);
             setResult(score);
-            if (user) {
+            if (user && canSave) {
               setSaving(true);
               try {
                 await saveScore({
@@ -299,10 +301,22 @@ export function CalculatorForm({
         )}
         <p className="muted small">
           النتيجة محسوبة وفق الأوزان المنشورة، ولا تعني ضمان القبول.
-          {!user && (
+          {!user && savingFeature === "login" && (
             <>
               {" "}
               <Link to={"/auth/login?next=" + encodeURIComponent(location.pathname)}>سجّل دخولك</Link> لحفظ نتائجك.
+            </>
+          )}
+          {savingFeature === "locked" && result !== null && (
+            <>
+              {" "}
+              <button
+                type="button"
+                className="text-btn inline"
+                onClick={() => useUpgradeSheet.getState().show("saving")}
+              >
+                احفظ نتائجك في حسابك
+              </button>
             </>
           )}
         </p>

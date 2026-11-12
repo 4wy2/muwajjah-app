@@ -149,7 +149,41 @@ const PLUS_LABELS: Record<string, string> = {
   program_search: "البحث بالتخصص في كل الجامعات",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
+  saving: "حفظ المفضلة ونتائج الموزونة",
 };
+export type SavingState = "hidden" | "free" | "login" | "plus" | "locked";
+// Saving (favorites + calculator results) follows the owner's setting.
+// Before migration 012 there is no setting row (null): it behaves as today,
+// open to anyone signed in. The database enforces the same rule on insert.
+export function savingState(raw: string | null | undefined, signedIn: boolean): SavingState {
+  if (raw === "hidden" || raw === "free" || raw === "login" || raw === "plus" || raw === "locked")
+    return raw;
+  return signedIn ? "free" : "login";
+}
+export function useSaving(): { state: SavingState; ready: boolean } {
+  const { user } = useAuth();
+  const f = useQuery({
+    queryKey: ["feature", "saving", user?.id || "guest"],
+    queryFn: () => rpc<string | null>("guide_feature_state", { target_feature: "saving" }),
+    staleTime: 60_000,
+  });
+  return { state: savingState(f.data, !!user), ready: !f.isPending };
+}
+// Every owner-controlled feature with its state for the current visitor.
+export function useFeatureStates(): Record<string, string | null> | undefined {
+  const { user } = useAuth();
+  const states = useQuery({
+    queryKey: ["commercial-states", user?.id || "guest"],
+    staleTime: 60_000,
+    queryFn: () => featureStates(),
+  });
+  if (!states.data) return undefined;
+  const out: Record<string, string | null> = {};
+  Object.keys(PLUS_LABELS).forEach((k, i) => {
+    out[k] = k === "saving" ? savingState(states.data[i], !!user) : states.data[i];
+  });
+  return out;
+}
 // The features the upgrade unlocks right now (plus or locked), by key.
 export function usePlusFeatureKeys(): string[] {
   const { user } = useAuth();
@@ -177,7 +211,7 @@ export function usePlusFeatures(): string[] {
 const featureStates = () =>
   Promise.all(
     Object.keys(PLUS_LABELS).map((k) =>
-      rpc<string>("guide_feature_state", { target_feature: k }).catch(() => "hidden"),
+      rpc<string | null>("guide_feature_state", { target_feature: k }).catch(() => "hidden"),
     ),
   );
 export function useCommercialVisible() {
