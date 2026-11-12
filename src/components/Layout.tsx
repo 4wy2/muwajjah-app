@@ -96,56 +96,86 @@ export default function Layout() {
     !plus.data &&
     !location.pathname.startsWith("/admin") &&
     !location.pathname.startsWith("/student/subscription");
+  // One list feeds the top navigation (laptop) and the bottom tab bar (phones
+  // and tablets): [path, label, icon, exact match, short label].
+  const links: [string, string, typeof Compass, boolean, string][] = [
+    ["/", "دليل الجامعات", GraduationCap, true, "الجامعات"],
+    ...(compareVisible
+      ? [["/compare", "قارن الجامعات", GitCompareArrows, false, "المقارنة"] as [string, string, typeof Compass, boolean, string]]
+      : []),
+    ["/student", "بوابة الطالب", UserRound, false, "حسابي"],
+    ...(member.data?.is_enabled
+      ? [["/admin", "الإدارة", ShieldCheck, false, "الإدارة"] as [string, string, typeof Compass, boolean, string]]
+      : []),
+  ];
+  // A university profile belongs to the guide tab.
+  const activeClass =
+    (to: string) =>
+    ({ isActive }: { isActive: boolean }) =>
+      isActive || (to === "/" && location.pathname.startsWith("/universities"))
+        ? "active"
+        : "";
+  const initial = String(
+    user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "م",
+  )
+    .trim()
+    .charAt(0);
   return (
     <>
       <a className="skip-link" href="#main">
         انتقل إلى المحتوى
       </a>
       <header className="topbar">
-        <div className="shell nav-row">
+        <div className="shell tb-inner">
           <Link to="/" className="brand" aria-label="مُوجّه، الصفحة الرئيسية">
             <span className="brand-icon">
-              <Compass size={31} />
+              <Compass size={26} />
             </span>
-            <span>
+            <span className="brand-text">
               مُوجّه<small>بوصلتك للجامعة</small>
             </span>
           </Link>
           {!gated && (
-          <nav aria-label="القائمة الرئيسية">
-            <NavLink to="/" end>
-              <GraduationCap size={19} /> دليل الجامعات
-            </NavLink>
-            {compareVisible && (
-              <NavLink to="/compare">
-                <GitCompareArrows size={18} /> قارن الجامعات
-              </NavLink>
-            )}
-            <NavLink to="/student/dashboard">
-              <UserRound size={18} /> بوابة الطالب
-            </NavLink>
-            {member.data?.is_enabled && (
-              <NavLink to="/admin">
-                <ShieldCheck size={18} /> الإدارة
-              </NavLink>
-            )}
-          </nav>
+            <nav className="tb-nav" aria-label="القائمة الرئيسية">
+              {links.map(([to, label, Icon, end]) => (
+                <NavLink key={to} to={to} end={end} className={activeClass(to)}>
+                  <Icon size={18} aria-hidden="true" />
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
           )}
-          <div className="nav-actions">
+          <div className="tb-actions">
             <ThemeToggle />
             {user ? (
-              <button
-                className="icon-btn"
-                aria-label="تسجيل الخروج"
-                onClick={async () => {
-                  const { error } = await db.auth.signOut();
-                  if (error) toast(friendly(error), true);
-                }}
-              >
-                <LogOut size={19} />
-              </button>
+              <>
+                {!gated && (
+                  <Link
+                    className="account-chip"
+                    to="/student/dashboard"
+                    aria-label="حسابي"
+                    title="حسابي"
+                  >
+                    <span className="avatar" aria-hidden="true">
+                      {initial}
+                    </span>
+                    <span className="account-name">حسابي</span>
+                  </Link>
+                )}
+                <button
+                  className="icon-btn"
+                  aria-label="تسجيل الخروج"
+                  title="تسجيل الخروج"
+                  onClick={async () => {
+                    const { error } = await db.auth.signOut();
+                    if (error) toast(friendly(error), true);
+                  }}
+                >
+                  <LogOut size={19} />
+                </button>
+              </>
             ) : (
-              <Link className="btn primary compact" to="/auth/login">
+              <Link className="btn primary compact login-btn" to="/auth/login">
                 تسجيل الدخول <ArrowIcon />
               </Link>
             )}
@@ -178,17 +208,45 @@ export default function Layout() {
           <Outlet />
         </TeamGate>
       </main>
-      <footer className="shell footer">
-        <Link className="footer-brand" to="/">
-          مُوجّه
-        </Link>
-        <span>قرارك الجامعي يبدأ بمعرفة خياراتك.</span>
-        <nav className="footer-links" aria-label="روابط التذييل">
-          <Link to="/privacy">الخصوصية</Link>
-          <Link to="/terms">شروط الاستخدام</Link>
-        </nav>
-        <small>© {new Date().getFullYear()} مُوجّه</small>
+      <footer className="site-footer">
+        <div className="shell sf-inner">
+          <div className="sf-brand">
+            <Link className="footer-brand" to="/">
+              <span className="brand-icon" aria-hidden="true">
+                <Compass size={20} />
+              </span>
+              مُوجّه
+            </Link>
+            <p>دليل الجامعات الحكومية في السعودية: القبول والتخصصات والسكن في مكان واحد.</p>
+          </div>
+          <nav className="sf-links" aria-label="روابط التذييل">
+            {!gated && (
+              <>
+                <Link to="/">دليل الجامعات</Link>
+                <Link to="/student/dashboard">بوابة الطالب</Link>
+              </>
+            )}
+            <Link to="/privacy">الخصوصية</Link>
+            <Link to="/terms">شروط الاستخدام</Link>
+          </nav>
+          <div className="sf-bottom">
+            <small>© {new Date().getFullYear()} مُوجّه</small>
+            <small>قرارك الجامعي يبدأ بمعرفة خياراتك.</small>
+          </div>
+        </div>
       </footer>
+      {!gated && !location.pathname.startsWith("/auth") && (
+        <nav className="bottom-nav" aria-label="التنقل السريع">
+          {links.map(([to, label, Icon, end, short]) => (
+            <NavLink key={to} to={to} end={end} className={activeClass(to)}>
+              <span className="bn-icon" aria-hidden="true">
+                <Icon size={21} />
+              </span>
+              {short}
+            </NavLink>
+          ))}
+        </nav>
+      )}
       <ToTop
         hidden={
           prefs.comparison.length > 0 &&

@@ -197,3 +197,9 @@
   .admin-brand small { display: none; }
   .admin-topbar .btn.compact { padding: 8px 10px; font-size: 13px; }
 }
+/* Admin top bar matches the site bar: sticky, translucent. */
+.admin-topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  -webkit-backdrop-filter: saturate(160%) blur(10px); backdrop-filter: saturate(160%) blur(10px);
+}
