@@ -27,3 +27,17 @@ export const usePreferences = create<{
     { name: "muwajjah-preferences-v2" },
   ),
 );
+
+// The upgrade sheet: opened from a locked feature (that feature leads) or
+// from a general prompt (no feature).
+export const useUpgradeSheet = create<{
+  open: boolean;
+  feature: string | null;
+  show: (feature?: string | null) => void;
+  hide: () => void;
+}>()((set) => ({
+  open: false,
+  feature: null,
+  show: (feature = null) => set({ open: true, feature }),
+  hide: () => set({ open: false }),
+}));

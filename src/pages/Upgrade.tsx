@@ -1,163 +1,272 @@
-import { Link, Navigate } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { Link, Navigate, useLocation } from "react-router-dom";
 import {
   Search,
   GitCompareArrows,
   History,
   Check,
-  Minus,
   Sparkles,
   ShieldCheck,
+  X,
+  ArrowLeft,
   type LucideIcon,
 } from "lucide-react";
 import { track } from "../lib/analytics";
 import { useAuth } from "../auth/AuthProvider";
 import { useOffer } from "../api/commerce";
 import { usePlus, usePlusFeatureKeys, useCommercialVisible } from "../api/student";
+import { useUpgradeSheet } from "../lib/store";
 import { Loading, ErrorState } from "../components/ui";
 import { date } from "../lib/utils";
 
-// What each upgrade feature does for the student, in their words. Only the
-// features the owner has actually put behind the upgrade are listed.
-const BENEFITS: Record<string, { icon: LucideIcon; title: string; text: string }> = {
+// Benefits in the student's words, with where to use each once unlocked.
+// Only features the owner actually placed behind the upgrade are shown.
+export const BENEFITS: Record<
+  string,
+  { icon: LucideIcon; title: string; text: string; to: string; cta: string }
+> = {
   program_search: {
     icon: Search,
-    title: "البحث بالتخصص في كل الجامعات",
+    title: "ابحث بالتخصص في كل الجامعات",
     text: "اكتب التخصص اللي تبيه، وتطلع لك كل الجامعات اللي تدرّسه في مكان واحد.",
+    to: "/?by=major",
+    cta: "جرّب البحث بالتخصص",
   },
   comparison: {
     icon: GitCompareArrows,
-    title: "مقارنة الجامعات جنب بعض",
-    text: "حط حتى 3 جامعات في جدول واحد: السكن، والقبول، والتخصصات.",
+    title: "قارن الجامعات جنب بعض",
+    text: "حتى 3 جامعات في جدول واحد: السكن، والقبول، والتخصصات.",
+    to: "/compare",
+    cta: "افتح المقارنة",
   },
   historical_cutoffs: {
     icon: History,
-    title: "نسب القبول السابقة",
+    title: "شوف نسب القبول السابقة",
     text: "أقل النسب اللي انقبل فيها الطلاب في السنوات اللي فاتت، مع مصدر كل رقم.",
+    to: "/",
+    cta: "افتح أي جامعة",
   },
 };
-const FREE = [
-  "صفحة كاملة لكل جامعة: القبول والسكن والبيئة والسلبيات",
-  "حاسبة النسبة الموزونة وحفظ نتائجك",
-  "المفضلة",
+
+// How the purchase works, answered before the student asks.
+const FAQ: [string, string][] = [
+  ["كيف تنفتح المزايا؟", "تدفع من صفحة الدفع، وتنفتح المزايا على حسابك تلقائيًا. لازم تدفع بنفس إيميل حسابك."],
+  ["هل يتجدد الدفع؟", "لا. دفعة وحدة للموسم، وما فيه تجديد تلقائي."],
+  ["وش يبقى مجاني؟", "صفحات الجامعات كاملة، والسكن، والشروط، وحاسبة الموزونة، والمفضلة. هذي مجانية دائمًا."],
 ];
 
-// The upgrade page: what the student gets, then how to upgrade. Open to
-// visitors too; upgrading itself needs an account (payment is matched by e-mail).
+function useOfferInfo() {
+  const offer = useOffer();
+  const o = offer.data;
+  const term = o?.season_ends_at ? "لين " + date(o.season_ends_at) : "للموسم كامل";
+  return { offer, o, term };
+}
+
+// The single purchase action: sign in first (payment is matched by e-mail).
+function BuyButton({ from }: { from: string }) {
+  const { user } = useAuth();
+  const { o } = useOfferInfo();
+  const loc = useLocation();
+  if (!user)
+    return (
+      <Link className="btn primary buy-btn" to={"/auth/login?next=" + encodeURIComponent(loc.pathname + loc.search)}>
+        سجّل دخولك للترقية
+      </Link>
+    );
+  if (!o?.purchase_url)
+    return (
+      <p className="notice">
+        {o?.note || "للترقية تواصل مع إدارة مُوجّه، وتنفتح المزايا على حسابك بعد التحويل."}
+      </p>
+    );
+  return (
+    <a
+      className="btn primary buy-btn"
+      href={o.purchase_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => track("subscribe_click", { from })}
+    >
+      رقِّ حسابي{o.price_text ? " · " + o.price_text : ""}
+    </a>
+  );
+}
+function EmailNote() {
+  const { user } = useAuth();
+  const { o } = useOfferInfo();
+  if (!user || !o?.purchase_url) return null;
+  return (
+    <p className="pay-note">
+      <ShieldCheck size={15} aria-hidden="true" />
+      <span>
+        ادفع بنفس إيميل حسابك
+        {user.email ? (
+          <>
+            {" "}
+            (<bdi dir="ltr">{user.email}</bdi>)
+          </>
+        ) : null}
+        .
+      </span>
+    </p>
+  );
+}
+
+// Opened from a locked feature: the feature the student wanted leads, the
+// rest follow, then the price and one action, with a clear way out.
+export function UpgradeSheet() {
+  const { open, feature, hide } = useUpgradeSheet();
+  const keys = usePlusFeatureKeys();
+  const { term } = useOfferInfo();
+  const ref = useRef<HTMLDialogElement>(null);
+  const loc = useLocation();
+  useEffect(() => {
+    const el = ref.current;
+    if (open && !el?.open) el?.showModal();
+    if (!open && el?.open) el.close();
+  }, [open]);
+  useEffect(() => hide(), [loc.pathname]);
+  const lead = feature && BENEFITS[feature] ? BENEFITS[feature] : null;
+  const others = keys.filter((k) => k !== feature).map((k) => BENEFITS[k]).filter(Boolean);
+  return (
+    <dialog
+      ref={ref}
+      className="upgrade-sheet"
+      aria-label="ترقية الحساب"
+      onClose={hide}
+      onClick={(e) => e.target === ref.current && hide()}
+    >
+      <button className="icon-btn sheet-close" aria-label="إغلاق" onClick={hide}>
+        <X size={20} />
+      </button>
+      {lead ? (
+        <div className="sheet-lead">
+          <span className="sheet-icon" aria-hidden="true">
+            <lead.icon size={26} />
+          </span>
+          <h2>{lead.title}</h2>
+          <p>{lead.text}</p>
+        </div>
+      ) : (
+        <div className="sheet-lead">
+          <span className="sheet-icon" aria-hidden="true">
+            <Sparkles size={26} />
+          </span>
+          <h2>أدوات تساعدك وقت القرار</h2>
+          <p>رقِّ حسابك وتنفتح لك هذي الأدوات {term}.</p>
+        </div>
+      )}
+      {others.length > 0 && (
+        <>
+          {lead && <p className="sheet-also">ومعها:</p>}
+          <ul className="sheet-list">
+            {others.map((b) => (
+              <li key={b.title}>
+                <Check size={17} aria-hidden="true" /> {b.title}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <div className="sheet-actions">
+        <BuyButton from={"sheet_" + (feature || "general")} />
+        <EmailNote />
+        <p className="sheet-term">دفعة وحدة، تبقى {term}. بدون تجديد تلقائي.</p>
+        <div className="sheet-links">
+          <button className="text-btn" onClick={hide}>
+            ليس الآن
+          </button>
+          <Link to="/upgrade" className="text-btn">
+            كل التفاصيل
+          </Link>
+        </div>
+      </div>
+    </dialog>
+  );
+}
+
+// The full page: what you get, one plan, the questions people ask.
 export function UpgradeView() {
   const { user } = useAuth();
   const plus = usePlus();
-  const offer = useOffer();
   const keys = usePlusFeatureKeys();
-  const o = offer.data;
+  const { offer, o, term } = useOfferInfo();
   if (offer.isPending || (user && plus.isPending)) return <Loading />;
   if (plus.error) return <ErrorState error={plus.error} retry={() => plus.refetch()} />;
-  const upgraded = !!plus.data;
   const benefits = keys.map((k) => BENEFITS[k]).filter(Boolean);
-  return (
-    <div className="upgrade">
-      <header className="upgrade-hero">
-        <span className="upgrade-mark" aria-hidden="true">
-          <Sparkles size={26} />
-        </span>
-        <h1>{upgraded ? "حسابك مُرقّى" : "رقِّ حسابك"}</h1>
-        <p>
-          {upgraded
-            ? "كل الأدوات تحت مفتوحة لك" +
-              (plus.data?.expires_at ? " حتى " + date(plus.data.expires_at) : "") +
-              "."
-            : "أدوات تساعدك وقت القرار. ومعلومات الجامعات الأساسية تبقى مجانية لك دائمًا."}
-        </p>
-      </header>
-
-      {benefits.length > 0 && (
-        <ul className="benefits">
+  if (plus.data)
+    return (
+      <div className="upgrade">
+        <header className="up-head">
+          <span className="up-badge">
+            <Sparkles size={15} aria-hidden="true" /> حسابك مُرقّى
+          </span>
+          <h1>كل الأدوات مفتوحة لك</h1>
+          <p className="muted">حتى {date(plus.data.expires_at)}.</p>
+        </header>
+        <ul className="up-features">
           {benefits.map((b) => (
-            <li key={b.title} className={upgraded ? "on" : ""}>
-              <span className="benefit-icon" aria-hidden="true">
-                <b.icon size={22} />
+            <li key={b.title}>
+              <span className="up-icon" aria-hidden="true">
+                <b.icon size={21} />
               </span>
               <div>
                 <h2>{b.title}</h2>
                 <p>{b.text}</p>
+                <Link to={b.to} className="up-go">
+                  {b.cta} <ArrowLeft size={15} aria-hidden="true" />
+                </Link>
               </div>
-              {upgraded && <Check className="benefit-check" size={20} aria-label="مفتوحة" />}
             </li>
           ))}
         </ul>
-      )}
-
-      {!upgraded && (
-        <>
-          <section className="compare-plans" aria-label="الفرق بين الحسابين">
-            <div className="plan-row plan-head">
-              <span />
-              <span>مجاني</span>
-              <span>بعد الترقية</span>
-            </div>
-            {FREE.map((f) => (
-              <div className="plan-row" key={f}>
-                <span>{f}</span>
-                <Check size={18} aria-label="متاح" />
-                <Check size={18} aria-label="متاح" />
+      </div>
+    );
+  return (
+    <div className="upgrade">
+      <header className="up-head">
+        <span className="up-badge">
+          <Sparkles size={15} aria-hidden="true" /> ترقية الحساب
+        </span>
+        <h1>قرّر بثقة: ابحث، قارن، وشوف نسب القبول</h1>
+        <p className="muted">أدوات إضافية لوقت القرار. ومعلومات الجامعات الأساسية تبقى مجانية لك دائمًا.</p>
+      </header>
+      <section className="plan-card" aria-label="الترقية">
+        <div className="plan-top">
+          <div>
+            <h2>الحساب المُرقّى</h2>
+            <p className="muted">{o?.season_label || "للموسم"}</p>
+          </div>
+          {o?.price_text && <p className="plan-price">{o.price_text}</p>}
+        </div>
+        <ul className="up-features compact">
+          {benefits.map((b) => (
+            <li key={b.title}>
+              <span className="up-icon" aria-hidden="true">
+                <b.icon size={20} />
+              </span>
+              <div>
+                <h3>{b.title}</h3>
+                <p>{b.text}</p>
               </div>
-            ))}
-            {benefits.map((b) => (
-              <div className="plan-row" key={b.title}>
-                <span>{b.title}</span>
-                <Minus size={18} aria-label="غير متاح" className="muted" />
-                <Check size={18} aria-label="متاح" />
-              </div>
-            ))}
-          </section>
-
-          <section className="upgrade-cta">
-            {o?.price_text && <p className="upgrade-price">{o.price_text}</p>}
-            <p className="muted">
-              دفعة وحدة
-              {o?.season_ends_at ? "، والترقية تبقى لين " + date(o.season_ends_at) : ""}
-              {o?.season_label ? " (" + o.season_label + ")" : ""}.
-            </p>
-            {!user ? (
-              <>
-                <Link className="btn primary" to={"/auth/login?next=" + encodeURIComponent("/upgrade")}>
-                  سجّل دخولك عشان ترقّي حسابك
-                </Link>
-                <p className="muted small">الترقية تنربط بحسابك، فلازم تسجّل دخول أول.</p>
-              </>
-            ) : o?.purchase_url ? (
-              <>
-                <a
-                  className="btn primary"
-                  href={o.purchase_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => track("subscribe_click", { from: "upgrade_page" })}
-                >
-                  رقِّ حسابي
-                </a>
-                <p className="notice">
-                  <ShieldCheck size={16} aria-hidden="true" />
-                  <span>
-                    ادفع بنفس إيميل حسابك
-                    {user.email ? (
-                      <>
-                        {" "}
-                        (<bdi dir="ltr">{user.email}</bdi>)
-                      </>
-                    ) : null}
-                    ، وتنفتح لك المزايا تلقائيًا بعد الدفع.
-                  </span>
-                </p>
-              </>
-            ) : (
-              <p className="notice">
-                {o?.note || "للترقية تواصل مع إدارة مُوجّه، وتنفتح المزايا على حسابك بعد التحويل."}
-              </p>
-            )}
-            {o?.purchase_url && o?.note && <p className="muted small">{o.note}</p>}
-          </section>
-        </>
-      )}
+            </li>
+          ))}
+        </ul>
+        <div className="plan-buy">
+          <BuyButton from="upgrade_page" />
+          <EmailNote />
+          <p className="sheet-term">دفعة وحدة، تبقى {term}. بدون تجديد تلقائي.</p>
+        </div>
+      </section>
+      <section className="up-faq" aria-label="أسئلة شائعة">
+        {FAQ.map(([q, a]) => (
+          <details key={q}>
+            <summary>{q}</summary>
+            <p>{a}</p>
+          </details>
+        ))}
+        {o?.note && <p className="muted small">{o.note}</p>}
+      </section>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useUpgradeSheet } from "../lib/store";
 import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -448,9 +449,9 @@ function Cutoffs({ id, sections, website }: { id: string; sections: Section[]; w
         <div className="plus-callout">
           <LockKeyhole size={22} />
           <p>نسب القبول السابقة تنفتح لك بعد ترقية حسابك.</p>
-          <Link to="/upgrade" className="btn secondary compact">
+          <button className="btn secondary compact" onClick={() => useUpgradeSheet.getState().show("historical_cutoffs")}>
             اعرف المميزات
-          </Link>
+          </button>
         </div>
       </Block>
     );

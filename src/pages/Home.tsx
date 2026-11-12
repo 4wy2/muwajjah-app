@@ -1,3 +1,4 @@
+import { useUpgradeSheet } from "../lib/store";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
@@ -260,9 +261,9 @@ function MajorResults({
         <Lock size={28} aria-hidden="true" />
         <h2>البحث بالتخصص من مزايا الحساب المُرقّى</h2>
         <p>اكتب التخصص اللي تبيه، وتطلع لك كل الجامعات اللي تدرّسه في مكان واحد.</p>
-        <Link className="btn primary" to="/upgrade">
+        <button className="btn primary" onClick={() => useUpgradeSheet.getState().show("program_search")}>
           اعرف المميزات
-        </Link>
+        </button>
       </div>
     );
   if (term.trim().length < 2)

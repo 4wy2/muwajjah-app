@@ -12,7 +12,8 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useAuth, useMember } from "../auth/AuthProvider";
-import { usePreferences } from "../lib/store";
+import { usePreferences, useUpgradeSheet } from "../lib/store";
+import { UpgradeSheet } from "../pages/Upgrade";
 import { useFeature } from "../api/catalog";
 import { db, queryClient } from "../api/client";
 import { claimPendingPlus, useOffer } from "../api/commerce";
@@ -152,6 +153,7 @@ export default function Layout() {
     });
   }, [user?.id]);
   const plusFeatures = usePlusFeatures();
+  const showUpgrade = useUpgradeSheet((s) => s.show);
   // Team-only mode: visitors outside the team see only the brand and sign-in.
   const sitePrivate = useSitePrivate();
   const gated = sitePrivate.data !== false && !member.data?.is_enabled;
@@ -271,13 +273,15 @@ export default function Layout() {
           <span>
             <strong>رقِّ حسابك</strong>: {plusFeatures.join("، ")}.
           </span>
-          <Link
+          <button
             className="btn primary compact"
-            to="/upgrade"
-            onClick={() => track("subscribe_click", { from: "promo_bar" })}
+            onClick={() => {
+              track("subscribe_click", { from: "promo_bar" });
+              showUpgrade();
+            }}
           >
             اعرف المميزات
-          </Link>
+          </button>
         </div>
       )}
       <main id="main" className="shell main">
@@ -312,6 +316,7 @@ export default function Layout() {
           </div>
         </div>
       </footer>
+      {!gated && <UpgradeSheet />}
       <ToTop
         hidden={
           prefs.comparison.length > 0 &&

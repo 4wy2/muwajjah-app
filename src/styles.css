@@ -2639,3 +2639,74 @@ dialog form > .btn.primary:last-child {
   .plan-row { grid-template-columns: minmax(0, 1fr) 64px 72px; font-size: 13.5px; }
   .upgrade-cta .btn { width: 100%; }
 }
+
+/* ---------- Upgrade v2: contextual sheet + calm plan page ---------- */
+dialog.upgrade-sheet {
+  width: min(440px, calc(100% - 24px)); padding: 22px 20px 18px; border-radius: 22px; border: 0;
+  box-shadow: 0 30px 80px #1d133d40; position: fixed;
+}
+.sheet-close { position: absolute; top: 10px; inset-inline-end: 10px; }
+.sheet-lead { text-align: center; padding: 8px 6px 4px; }
+.sheet-icon {
+  width: 56px; height: 56px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tint); color: var(--accent); margin-bottom: 12px;
+}
+.sheet-lead h2 { font-size: 20px; font-weight: 800; margin: 0 0 6px; }
+.sheet-lead p { margin: 0 auto; color: var(--muted); font-size: 14.5px; line-height: 1.8; max-width: 34ch; }
+.sheet-also { margin: 14px 0 4px; font-size: 13px; color: var(--muted); font-weight: 700; }
+.sheet-list { list-style: none; margin: 10px 0 0; padding: 12px 14px; background: var(--bg); border-radius: 14px; display: grid; gap: 8px; }
+.sheet-list li { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 14.5px; }
+.sheet-list svg { color: #1d8a55; flex: none; }
+.sheet-actions { display: grid; gap: 8px; margin-top: 16px; justify-items: stretch; text-align: center; }
+.buy-btn { width: 100%; min-height: 50px; font-size: 16px; border-radius: 14px; }
+.pay-note { display: flex; gap: 6px; align-items: flex-start; justify-content: center; margin: 0; font-size: 13px; color: var(--muted); }
+.pay-note svg { flex: none; margin-top: 3px; color: var(--accent); }
+.sheet-term { margin: 0; font-size: 12.5px; color: var(--muted); }
+.sheet-links { display: flex; justify-content: space-between; margin-top: 2px; }
+.sheet-links .text-btn { font-size: 14px; }
+@media (max-width: 560px) {
+  /* Phones: a sheet from the bottom edge. */
+  dialog.upgrade-sheet {
+    width: 100%; max-width: 100%; margin: auto 0 0; border-radius: 22px 22px 0 0;
+    padding: 20px 18px calc(16px + env(safe-area-inset-bottom)); max-height: 88dvh;
+  }
+  dialog.upgrade-sheet::before {
+    content: ""; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: -8px auto 10px;
+  }
+}
+
+.upgrade { max-width: 640px; margin-inline: auto; display: grid; gap: 16px; }
+.up-head { text-align: center; padding: 10px 6px 0; }
+.up-badge {
+  display: inline-flex; gap: 6px; align-items: center; padding: 5px 12px; border-radius: 999px;
+  background: var(--tint); color: var(--accent); font-weight: 800; font-size: 13px; margin-bottom: 10px;
+}
+.up-head h1 { font-size: clamp(22px, 3.6vw, 30px); font-weight: 800; line-height: 1.4; margin: 0 0 6px; }
+.up-head p { margin: 0 auto; max-width: 48ch; font-size: 15px; line-height: 1.8; }
+.plan-card {
+  background: var(--surface); border: 1.5px solid var(--accent); border-radius: 20px; padding: 18px;
+  box-shadow: 0 14px 34px #6a4fcf1f;
+}
+.plan-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.plan-top h2 { font-size: 18px; font-weight: 800; margin: 0; }
+.plan-top p { margin: 2px 0 0; font-size: 13.5px; }
+.plan-price { font-size: 26px; font-weight: 800; color: var(--accent); margin: 0; white-space: nowrap; }
+.up-features { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.up-features.compact { margin: 14px 0 16px; }
+.up-features li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; }
+.upgrade > .up-features li { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; }
+.up-icon {
+  width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tint); color: var(--accent);
+}
+.up-features h2, .up-features h3 { font-size: 15.5px; font-weight: 800; margin: 2px 0 2px; }
+.up-features p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.75; }
+.up-go { display: inline-flex; gap: 4px; align-items: center; margin-top: 6px; font-weight: 700; font-size: 14px; }
+.plan-buy { display: grid; gap: 8px; text-align: center; }
+.up-faq { display: grid; gap: 8px; }
+.up-faq details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; }
+.up-faq summary { cursor: pointer; font-weight: 700; padding: 13px 0; list-style: none; display: flex; justify-content: space-between; }
+.up-faq summary::-webkit-details-marker { display: none; }
+.up-faq summary::after { content: "+"; color: var(--accent); font-weight: 800; }
+.up-faq details[open] summary::after { content: "−"; }
+.up-faq details p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; line-height: 1.8; }

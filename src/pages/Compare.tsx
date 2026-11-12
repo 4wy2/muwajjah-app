@@ -1,3 +1,4 @@
+import { useUpgradeSheet } from "../lib/store";
 import { useEffect } from "react";
 import { track } from "../lib/analytics";
 import { Link, Navigate } from "react-router-dom";
@@ -52,9 +53,9 @@ export default function Compare() {
   if (feature.data === "locked")
     return (
       <Empty title="مقارنة الجامعات من مزايا الحساب المُرقّى">
-        <Link className="btn primary" to="/upgrade">
+        <button className="btn primary" onClick={() => useUpgradeSheet.getState().show("comparison")}>
           اعرف المميزات
-        </Link>
+        </button>
       </Empty>
     );
   const rows = [
