@@ -1,7 +1,30 @@
 import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { MapPin, ExternalLink, Calculator, LockKeyhole, Share2 } from "lucide-react";
+import {
+  MapPin,
+  ExternalLink,
+  Calculator,
+  LockKeyhole,
+  Share2,
+  Info,
+  MapPinned,
+  Award,
+  TrendingUp,
+  BriefcaseBusiness,
+  ClipboardCheck,
+  GraduationCap,
+  History,
+  BedDouble,
+  Sparkles,
+  TriangleAlert,
+  Layers,
+  Phone,
+  AtSign,
+  Users,
+  Ban,
+  type LucideIcon,
+} from "lucide-react";
 import {
   useUniversity,
   useUniversityContent,
@@ -67,6 +90,24 @@ export function Source({
   );
 }
 
+// Each part of the profile gets its own mark so a student scrolling a long
+// page can tell sections apart at a glance.
+const BLOCK_ICON: Record<string, LucideIcon> = {
+  about: Info,
+  branches: MapPinned,
+  ranking: Award,
+  competition: TrendingUp,
+  employment: BriefcaseBusiness,
+  admission: ClipboardCheck,
+  programs: GraduationCap,
+  cutoffs: History,
+  housing: BedDouble,
+  environment: Sparkles,
+  drawbacks: TriangleAlert,
+  extra: Layers,
+  contact: Phone,
+  social: AtSign,
+};
 function Block({
   id,
   title,
@@ -76,10 +117,20 @@ function Block({
   title: string;
   children: ReactNode;
 }) {
+  const Icon = BLOCK_ICON[id] || Layers;
   return (
-    <section className="profile-block" id={id} aria-labelledby={id + "-h"}>
-      <h2 id={id + "-h"}>{title}</h2>
-      {children}
+    <section
+      className={"profile-block" + (id === "drawbacks" ? " tone-warn" : "")}
+      id={id}
+      aria-labelledby={id + "-h"}
+    >
+      <h2 id={id + "-h"}>
+        <span className="block-icon" aria-hidden="true">
+          <Icon size={19} />
+        </span>
+        {title}
+      </h2>
+      <div className="block-body">{children}</div>
     </section>
   );
 }
@@ -88,16 +139,22 @@ function SectionList({
   items,
   website,
   showTitles,
+  blockTitle,
 }: {
   items: Section[];
   website: string;
   showTitles: boolean;
+  // A section titled like its block ("شروط القبول" under "شروط القبول
+  // ومساراته") does not repeat the heading.
+  blockTitle?: string;
 }) {
   return (
     <>
       {items.map((s) => (
         <div className="flex-section" key={s.id}>
-          {showTitles && <h3>{s.title}</h3>}
+          {showTitles && !(blockTitle && blockTitle.includes(s.title.trim())) && (
+            <h3>{s.title}</h3>
+          )}
           <RichText text={s.content} />
           <Source url={s.source_url} verified={s.verified_on} website={website} />
         </div>
@@ -273,26 +330,41 @@ function TrackItem({
           </span>
         ))}
       </div>
-      {weighted && (
-        <div className="weights">
-          {[
-            ["الثانوية", t.school_weight],
-            ["القدرات", t.aptitude_weight],
-            ["التحصيلي", t.achievement_weight],
-          ]
-            .filter(([, w]) => Number(w) > 0)
-            .map(([l, w]) => (
-              <span key={String(l)}>
-                {l} <b dir="ltr">{Number(w)}%</b>
-              </span>
-            ))}
-        </div>
-      )}
+      {weighted && <WeightBar t={t} />}
       <RichText text={t.requirements} />
       {!hideSource && (
         <Source url={t.source_url} verified={t.verified_on} website={website} />
       )}
     </article>
+  );
+}
+
+// The weights as one bar: how much of the weighted score each test carries.
+function WeightBar({ t }: { t: Track }) {
+  const parts = (
+    [
+      ["الثانوية", Number(t.school_weight), "w1"],
+      ["القدرات", Number(t.aptitude_weight), "w2"],
+      ["التحصيلي", Number(t.achievement_weight), "w3"],
+    ] as [string, number, string][]
+  ).filter(([, w]) => w > 0);
+  const label = parts.map(([l, w]) => l + " " + w + "%").join("، ");
+  return (
+    <div className="weights">
+      <div className="weight-bar" role="img" aria-label={"الأوزان: " + label}>
+        {parts.map(([l, w, c]) => (
+          <span key={l} className={c} style={{ flexGrow: w }} />
+        ))}
+      </div>
+      <ul className="weight-legend">
+        {parts.map(([l, w, c]) => (
+          <li key={l}>
+            <i className={c} aria-hidden="true" />
+            {l} <b dir="ltr">{w}%</b>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -440,9 +512,18 @@ function Housing({ uni, sections }: { uni: Uni; sections: Section[] }) {
   const note = uni.housing_note?.trim() || "";
   const repeated = !!note && sections.some((s) => sameText(note, s.content || ""));
   if (!label && (!note || repeated)) return null;
+  const status = uni.housing_status || "unknown";
+  const Icon = status === "unavailable" ? Ban : status === "both" ? Users : BedDouble;
   return (
     <>
-      {label && <p className="housing-status">{label}</p>}
+      {label && (
+        <p className={"housing-status hs-" + status}>
+          <span aria-hidden="true">
+            <Icon size={20} />
+          </span>
+          {label}
+        </p>
+      )}
       {!repeated && <RichText text={note} />}
       <Source url={uni.housing_source_url} verified={uni.housing_verified_on} website={uni.website_url} />
     </>
@@ -548,7 +629,7 @@ export default function University() {
     const showTitles = items.length > 1 || k === "extra";
     return (
       <Block id={k} title={title(k)} key={k}>
-        <SectionList items={items} website={web} showTitles={showTitles} />
+        <SectionList items={items} website={web} showTitles={showTitles} blockTitle={title(k)} />
       </Block>
     );
   };
@@ -577,7 +658,7 @@ export default function University() {
       if (trackList.length || take("admission").length)
         blocks.push(
           <Block id="admission" title={title("admission")} key="admission">
-            <SectionList items={take("admission")} website={web} showTitles={take("admission").length > 1 || trackList.length > 0} />
+            <SectionList items={take("admission")} website={web} blockTitle={title("admission")} showTitles={take("admission").length > 1 || trackList.length > 0} />
             {trackList.map((t) => (
               <TrackItem t={t} key={t.id} website={web} hideSource={sharedSource} />
             ))}
@@ -628,10 +709,12 @@ export default function University() {
     }
   }
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
-  const glance = [
-    trackList.length ? number(trackList.length) + " مسار قبول" : "",
-    housing(uni.housing_status) || "",
-  ].filter(Boolean);
+  const glance = (
+    [
+      [trackList.length ? number(trackList.length) + " مسار قبول" : "", ClipboardCheck],
+      [housing(uni.housing_status) || "", uni.housing_status === "unavailable" ? Ban : BedDouble],
+    ] as [string, LucideIcon][]
+  ).filter(([g]) => g);
   return (
     <article className="profile">
       {preview && (
@@ -644,6 +727,7 @@ export default function University() {
         <span aria-hidden="true">/</span>
         <span>{uni.name}</span>
       </nav>
+      <div className="profile-hero">
       <header className="profile-header">
         <UniversityLogo university={uni} />
         <div className="profile-id">
@@ -668,6 +752,17 @@ export default function University() {
           )}
         </div>
       </header>
+      {glance.length > 0 && (
+        <ul className="glance" aria-label="نظرة سريعة">
+          {glance.map(([g, Icon]) => (
+            <li key={g}>
+              <Icon size={15} aria-hidden="true" />
+              {g}
+            </li>
+          ))}
+        </ul>
+      )}
+      </div>
       {contentError && (
         <ErrorState
           error={contentError}
@@ -677,13 +772,6 @@ export default function University() {
             void sections.refetch();
           }}
         />
-      )}
-      {glance.length > 0 && (
-        <ul className="glance" aria-label="نظرة سريعة">
-          {glance.map((g) => (
-            <li key={g}>{g}</li>
-          ))}
-        </ul>
       )}
       {blocks}
       {loadingContent && <Loading />}

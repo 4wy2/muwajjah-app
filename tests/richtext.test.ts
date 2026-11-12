@@ -16,3 +16,23 @@ describe("rich text", () => {
     expect(sameText("يتوفر سكن", "لا يتوفر حاليًا مقاعد")).toBe(false);
   });
 });
+
+import { paraParts } from "../src/components/RichText";
+import { slotFor } from "../src/lib/sections";
+describe("paragraph structure", () => {
+  it("reads short headings, fact tiles and long labelled text", () => {
+    expect(paraParts("للسعوديين:\nعالميًا: ضمن الفئة 1201–1400.\nشروطه: الانتظام في الدراسة، وأن يكون الطالب من خارج المدينة")).toEqual([
+      { head: "للسعوديين" },
+      { kv: [["عالميًا", "ضمن الفئة 1201–1400"]] },
+      { lead: ["شروطه", "الانتظام في الدراسة، وأن يكون الطالب من خارج المدينة"] },
+    ]);
+  });
+  it("leaves links and ordinary sentences alone", () => {
+    expect(paraParts("الموقع: https://iu.edu.sa")).toEqual([{ text: "الموقع: https://iu.edu.sa" }]);
+    expect(paraParts("سطر عادي بدون نقطتين")).toEqual([{ text: "سطر عادي بدون نقطتين" }]);
+  });
+  it("puts the weighted-percentage section with admission", () => {
+    expect(slotFor({ title: "النسبة الموزونة", feature_key: "general" })).toBe("admission");
+    expect(slotFor({ title: "أقل موزونة مقبولة", feature_key: "general" })).toBe("cutoffs");
+  });
+});

@@ -2232,3 +2232,110 @@ dialog form > .btn.primary:last-child {
 }
 /* Row actions stay on one line in full tables (tablet and up). */
 .table-wrap td .actions { flex-wrap: nowrap; gap: 2px; }
+
+/* ---------- University profile: presentation pass ---------- */
+.profile { max-width: 880px; }
+.profile-hero {
+  background: linear-gradient(165deg, var(--tint) 0%, var(--surface) 72%);
+  border: 1px solid var(--line); border-radius: 20px; padding: 22px 22px 18px; margin-bottom: 6px;
+}
+.profile-hero .profile-header { border-bottom: 0; padding-bottom: 0; margin-bottom: 14px; }
+.profile-hero .profile-header .university-logo { width: 64px; height: 64px; background: var(--surface); }
+.profile-id h1 { font-size: clamp(22px, 3.2vw, 30px); font-weight: 800; line-height: 1.35; }
+.profile-hero .glance { margin: 0; }
+.profile-hero .glance li {
+  display: inline-flex; gap: 6px; align-items: center; background: var(--surface);
+  border-color: transparent; box-shadow: 0 1px 0 var(--line); padding: 7px 13px;
+}
+.profile-hero .glance li svg { color: var(--accent); }
+
+/* Section heading with its mark; body aligned under the heading text. */
+.profile-block { padding: 26px 0; }
+.profile-block > h2 { display: flex; align-items: center; gap: 12px; font-size: 19px; font-weight: 800; margin-bottom: 12px; }
+.block-icon {
+  width: 38px; height: 38px; flex: none; border-radius: 11px; display: inline-flex;
+  align-items: center; justify-content: center; background: var(--tint); color: var(--accent);
+}
+.block-body { padding-inline-start: 50px; }
+.tone-warn .block-icon { background: #fff2d3; color: #9a6400; }
+.tone-warn .block-body { border-inline-start: 3px solid #f0c66b; padding-inline-start: 16px; margin-inline-start: 50px; }
+.tone-warn .block-body { padding-block: 2px; }
+
+/* Rich text: real bullets, small headings, definition tiles. */
+.rich ul { list-style: none; padding-inline-start: 0; margin: 6px 0 12px; }
+.rich li { position: relative; padding-inline-start: 18px; margin: 6px 0; }
+.rich li::before {
+  content: ""; position: absolute; inset-inline-start: 3px; top: 0.78em;
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+}
+.tone-warn .rich li::before { background: #d39a1e; }
+.rich-head { font-size: 15px; font-weight: 800; margin: 14px 0 4px; color: var(--text); }
+.rich-head:first-child { margin-top: 0; }
+.li-label { font-weight: 800; }
+.kv {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin: 8px 0 12px;
+}
+.kv > div { background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 10px 13px; }
+.kv dt { font-size: 12.5px; color: var(--muted); }
+.kv dd { margin: 2px 0 0; font-weight: 700; font-size: 15px; line-height: 1.55; }
+
+/* Housing status as a clear, colour-coded line. */
+.housing-status {
+  display: flex; gap: 10px; align-items: center; padding: 11px 14px; border-radius: 12px;
+  font-weight: 800; margin: 0 0 12px; background: var(--tint); color: var(--accent);
+}
+.housing-status > span {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--surface);
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+}
+.housing-status.hs-both, .housing-status.hs-available { background: #e6f5ed; color: #1d6b45; }
+.housing-status.hs-unavailable { background: #f0eff4; color: #5b5769; }
+
+/* Admission weights as one proportional bar. */
+.track .weights { display: block; margin: 8px 0 8px; }
+.track .weight-bar { display: flex; gap: 3px; height: 12px; border-radius: 99px; overflow: hidden; background: var(--line); }
+.track .weight-bar span { display: block; min-width: 6px; padding: 0; border: 0; border-radius: 0; flex-basis: 0; }
+.track .w1, .track .weight-bar .w1 { background: var(--accent); }
+.track .w2, .track .weight-bar .w2 { background: #9b84ee; }
+.track .w3, .track .weight-bar .w3 { background: #cbbdfa; }
+.weight-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; margin: 8px 0 0; font-size: 13.5px; color: var(--muted); }
+.weight-legend li { display: inline-flex; gap: 6px; align-items: center; }
+.weight-legend li::before { display: none; }
+.weight-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.weight-legend b { color: var(--text); font-size: 14px; }
+.track { padding: 14px 16px; border-radius: 14px; }
+.track-head h3 { font-size: 16px; font-weight: 800; }
+
+[data-theme="dark"] .tone-warn .block-icon { background: #3a3324; color: #f5d68a; }
+[data-theme="dark"] .tone-warn .block-body { border-color: #7a6330; }
+[data-theme="dark"] .housing-status.hs-both, [data-theme="dark"] .housing-status.hs-available { background: #1f3a2d; color: #a5dfc5; }
+[data-theme="dark"] .housing-status.hs-unavailable { background: #2b2935; color: #c9c5d4; }
+[data-theme="dark"] .track .w2, [data-theme="dark"] .track .weight-bar .w2 { background: #8a72e6; }
+[data-theme="dark"] .track .w3, [data-theme="dark"] .track .weight-bar .w3 { background: #5d4a9e; }
+
+@media (max-width: 640px) {
+  .profile-hero { padding: 16px; border-radius: 16px; }
+  .profile-hero .profile-header .university-logo { width: 52px; height: 52px; }
+  .profile-block { padding: 20px 0; }
+  .profile-block > h2 { font-size: 17.5px; gap: 10px; }
+  .block-icon { width: 34px; height: 34px; }
+  .block-body { padding-inline-start: 0; }
+  .tone-warn .block-body { margin-inline-start: 0; padding-inline-start: 12px; }
+  .kv { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 380px) { .kv { grid-template-columns: 1fr; } }
+
+/* Site header stays reachable on long pages; content scrolls under it. */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter: saturate(160%) blur(10px); backdrop-filter: saturate(160%) blur(10px);
+}
+.profile-block { scroll-margin-top: 104px; }
+@media (max-width: 800px) { .profile-block { scroll-margin-top: 120px; } }
+/* Calculator: the three scores side by side even on phones (short numbers). */
+@media (max-width: 480px) {
+  .calculator .score-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .calculator .score-fields label, .calculator .score-fields .field > span { font-size: 13px; }
+}
+@media (max-width: 340px) { .calculator .score-fields { grid-template-columns: 1fr; } }

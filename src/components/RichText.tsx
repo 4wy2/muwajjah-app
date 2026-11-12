@@ -65,24 +65,89 @@ export function parseBlocks(text: string): ({ list: string[] } | { para: string 
   return out.filter((b) => !("para" in b) || b.para);
 }
 
+// A paragraph's lines, read for structure: a short line ending in ":" is a
+// small heading ("للسعوديين:"), and short "label: value" lines become a
+// definition list ("عالميًا: ضمن الفئة 1201–1400"). Everything else is text.
+type Part =
+  | { head: string }
+  | { kv: [string, string][] }
+  | { lead: [string, string] }
+  | { text: string };
+const KV = /^([^:：\n]{2,32}?)\s*[:：]\s*(\S.{0,90})$/;
+const kvOf = (line: string): [string, string] | null => {
+  if (/https?:|www\./.test(line)) return null;
+  const m = KV.exec(line);
+  if (!m || m[1].trim().split(/\s+/).length > 4) return null;
+  return [m[1].trim(), m[2].trim().replace(/[.。،]$/, "")];
+};
+export function paraParts(para: string): Part[] {
+  const out: Part[] = [];
+  for (const line of para.split("\n")) {
+    const last = out[out.length - 1];
+    if (/^[^:：]{2,40}[:：]$/.test(line)) out.push({ head: line.replace(/[:：]$/, "") });
+    else if (kvOf(line)) {
+      const kv = kvOf(line)!;
+      // Short facts become tiles; a long explanation keeps reading as text
+      // with its label in bold ("شروطه: الانتظام في الدراسة، وأن…").
+      if (kv[1].length > 42 || /[،,]/.test(kv[1])) out.push({ lead: kv });
+      else if (last && "kv" in last) last.kv.push(kv);
+      else out.push({ kv: [kv] });
+    } else if (last && "text" in last) last.text += "\n" + line;
+    else out.push({ text: line });
+  }
+  return out;
+}
+function ListItem({ text }: { text: string }) {
+  const kv = kvOf(text);
+  return kv ? (
+    <>
+      <b className="li-label">{kv[0]}:</b> <Inline text={kv[1]} />
+    </>
+  ) : (
+    <Inline text={text} />
+  );
+}
 export function RichText({ text, className }: { text?: string | null; className?: string }) {
   const t = (text || "").trim();
   if (!t) return null;
   const blocks = parseBlocks(t);
-  const body: ReactNode[] = blocks.map((b, i) =>
-    "list" in b ? (
-      <ul key={i}>
-        {b.list.map((x, j) => (
-          <li key={j}>
-            <Inline text={x} />
-          </li>
-        ))}
-      </ul>
-    ) : (
-      <p key={i} className="prewrap">
-        <Inline text={b.para} />
-      </p>
-    ),
+  const body: ReactNode[] = blocks.flatMap((b, i) =>
+    "list" in b
+      ? [
+          <ul key={i}>
+            {b.list.map((x, j) => (
+              <li key={j}>
+                <ListItem text={x} />
+              </li>
+            ))}
+          </ul>,
+        ]
+      : paraParts(b.para).map((p, j) =>
+          "head" in p ? (
+            <h4 className="rich-head" key={i + "-" + j}>
+              {p.head}
+            </h4>
+          ) : "kv" in p ? (
+            <dl className="kv" key={i + "-" + j}>
+              {p.kv.map(([k, v], n) => (
+                <div key={n}>
+                  <dt>{k}</dt>
+                  <dd>
+                    <Inline text={v} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          ) : "lead" in p ? (
+            <p key={i + "-" + j}>
+              <b className="li-label">{p.lead[0]}:</b> <Inline text={p.lead[1]} />
+            </p>
+          ) : (
+            <p key={i + "-" + j} className="prewrap">
+              <Inline text={p.text} />
+            </p>
+          ),
+        ),
   );
   return <div className={"rich" + (className ? " " + className : "")}>{body}</div>;
 }
