@@ -2147,3 +2147,88 @@ input, select, textarea { min-height: 44px; padding: 9px 12px; }
 .site-state p{margin:0;font-size:14px;line-height:1.7}
 .site-state svg{color:var(--accent);margin-top:3px}
 .site-panel.is-public .site-state svg{color:#2e9e6b}
+
+/* ---------- Cross-device pass (phone / tablet / laptop) ---------- */
+/* Touch screens: 16px inputs stop iOS from zooming on focus; 44px targets. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+  .icon-btn { width: 44px; height: 44px; }
+  .program-list .favorite { width: 44px; height: 44px; }
+  .text-btn { min-height: 44px; }
+}
+/* Horizontal section strips (admin and student): show there is more. */
+@media (max-width: 800px) {
+  .workspace-nav nav {
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to left, #000 88%, transparent);
+    mask-image: linear-gradient(to left, #000 88%, transparent);
+  }
+  .workspace-nav nav::-webkit-scrollbar { display: none; }
+  .workspace-nav nav a { scroll-snap-align: start; flex: none; }
+}
+/* Phone and small tablet: compact horizontal card (one per row on phones,
+   two per row on small tablets). */
+@media (max-width: 560px) {
+  .university-grid { grid-template-columns: 1fr; gap: 10px; }
+}
+@media (max-width: 800px) {
+  .university-card {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 12px; row-gap: 2px; align-items: start; padding: 12px 12px 12px 8px;
+  }
+  .university-card .card-top { display: contents; }
+  .university-card .university-logo { grid-column: 1; grid-row: 1 / span 3; width: 44px; height: 44px; }
+  .university-card .favorite { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+  .university-card .card-title { grid-column: 2; grid-row: 1; }
+  .university-card .card-title h3 { font-size: 15px; }
+  .university-card .card-location { grid-column: 2; grid-row: 2; }
+  .university-card .card-facts { grid-column: 2; grid-row: 3; margin-top: 2px; }
+  .university-card .card-facts .badge { display: none; }
+  .university-card .compare-button {
+    grid-column: 3; grid-row: 3; margin: 0; align-self: center; justify-self: center;
+    min-height: 32px; padding: 2px 8px; font-size: 12.5px;
+  }
+}
+/* Tables that become cards on small screens (admin lists, saved scores). */
+@media (max-width: 700px) {
+  .table-wrap.stack { overflow: visible; }
+  .stack table, .stack tbody { display: block; }
+  .stack thead { display: none; }
+  .stack tr {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+    padding: 12px 2px; border-bottom: 1px solid var(--line);
+  }
+  .stack tr:last-child { border-bottom: 0; }
+  .stack td { display: block; border: 0; padding: 0; }
+  .stack td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-size: 13px; }
+  .stack td.cell-check { order: 0; }
+  .stack td.cell-main { order: 1; flex: 1 1 55%; min-width: 0; }
+  .stack td.cell-status { order: 2; }
+  .stack td.cell-full, .stack td[data-label] { order: 3; }
+  .stack td.cell-actions { order: 4; }
+  .stack td.cell-status { margin-inline-start: auto; }
+  .stack td.cell-full, .stack td.cell-actions { flex-basis: 100%; }
+  .stack td.cell-actions .actions, .stack td.cell-actions { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: flex-start; }
+  .panel.table-wrap.stack { padding-top: 4px; padding-bottom: 4px; }
+}
+
+/* Back-to-top on long pages (mainly phones). */
+.to-top {
+  position: fixed; inset-inline-end: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line);
+  background: var(--surface); color: var(--accent); box-shadow: var(--shadow);
+  display: inline-flex; align-items: center; justify-content: center; z-index: 30;
+}
+@media print { .to-top { display: none; } }
+/* Long edit forms: the save button stays reachable while scrolling. */
+dialog form > .btn.primary:last-child {
+  position: sticky; bottom: -1px; z-index: 2; width: 100%;
+  box-shadow: 0 -10px 18px var(--surface);
+}
+@media (max-width: 560px) {
+  dialog { width: calc(100% - 20px); padding: 18px; max-height: 92dvh; border-radius: 14px; }
+  .modal-header { margin-bottom: 14px; padding-bottom: 10px; }
+}
+/* Row actions stay on one line in full tables (tablet and up). */
+.table-wrap td .actions { flex-wrap: nowrap; gap: 2px; }

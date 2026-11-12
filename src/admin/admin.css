@@ -191,3 +191,9 @@
 .chip.warn { background: #fff4d6; color: #8a6412; }
 [data-theme="dark"] .chip.warn { background: #3a3324; color: #f5d68a; }
 .readiness-list .notice { margin: 8px 0 0; display: flex; gap: 6px; align-items: center; }
+/* Narrow phones: keep the admin top bar on one line. */
+@media (max-width: 400px) {
+  .admin-topbar .actions { flex-wrap: nowrap; gap: 2px; }
+  .admin-brand small { display: none; }
+  .admin-topbar .btn.compact { padding: 8px 10px; font-size: 13px; }
+}

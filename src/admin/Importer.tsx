@@ -205,7 +205,7 @@ export default function Importer() {
                 </span>
               ))}
             </div>
-            <div className="table-wrap">
+            <div className="table-wrap stack">
               <table>
                 <thead>
                   <tr>
@@ -217,7 +217,7 @@ export default function Importer() {
                 <tbody>
                   {diff.map((d) => (
                     <tr key={d.key}>
-                      <td>
+                      <td className="cell-check">
                         <input
                           type="checkbox"
                           aria-label={"استيراد " + d.name}
@@ -234,7 +234,7 @@ export default function Importer() {
                           }
                         />
                       </td>
-                      <td>
+                      <td className="cell-main">
                         {d.name}
                         <small className="block">
                           {d.status === "new"
@@ -246,7 +246,7 @@ export default function Importer() {
                                 : "خطأ"}
                         </small>
                       </td>
-                      <td>
+                      <td className="cell-full">
                         {d.error ? (
                           <span className="error-text">{d.error}</span>
                         ) : d.changes.length ? (

@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { NavLink, Outlet, Link, useLocation } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
 import { useAuth, useMember, useAssignments } from "../auth/AuthProvider";
-import { Loading, ErrorState, Empty, ErrorBoundary } from "../components/ui";
+import { Loading, ErrorState, Empty, ErrorBoundary, useActiveNavIntoView } from "../components/ui";
 import { adminModules } from "./modules";
 import { canOpenAdminModule } from "./access";
 export default function AdminLayout() {
@@ -10,6 +10,7 @@ export default function AdminLayout() {
   const q = useMember();
   const assignments = useAssignments();
   const location = useLocation();
+  useActiveNavIntoView(location.pathname + (q.data ? ":ready" : ""));
   if (q.isPending) return <Loading />;
   if (q.error) return <ErrorState error={q.error} retry={() => q.refetch()} />;
   if (!q.data && user?.user_metadata?.guide_signup)

@@ -269,7 +269,7 @@ function Manager({
           <Empty title="لا توجد سجلات مطابقة" />
         ) : (
           <>
-            <div className="table-wrap">
+            <div className="table-wrap stack">
               <table>
                 <thead>
                   <tr>
@@ -308,7 +308,7 @@ function Manager({
                 <tbody>
                   {visible.map((r) => (
                     <tr key={r.id}>
-                      <td>
+                      <td className="cell-check">
                         <input
                           type="checkbox"
                           aria-label={"تحديد " + rowLabel(r)}
@@ -322,7 +322,7 @@ function Manager({
                           }
                         />
                       </td>
-                      <td>
+                      <td className="cell-main">
                         <strong>{rowLabel(r)}</strong>
                         {kind === "universities" && (
                           <small className="block muted">
@@ -331,7 +331,7 @@ function Manager({
                         )}
                       </td>
                       {kind !== "universities" && !universityLock && (
-                        <td>
+                        <td className="cell-full" data-label="الجامعة">
                           {String(
                             universities.data?.find(
                               (u) => u.id === r.university_id,
@@ -339,12 +339,12 @@ function Manager({
                           )}
                         </td>
                       )}
-                      <td>
+                      <td className="cell-status">
                         <span className={"badge " + rowState(r).cls}>
                           {rowState(r).label}
                         </span>
                       </td>
-                      <td>
+                      <td className="cell-actions">
                         <div className="actions">
                           {kind === "universities" && !r.deleted_at && (
                             <Link
@@ -375,6 +375,7 @@ function Manager({
                           {edit && !r.deleted_at && (publish || !r.published) && (
                             <button
                               className="icon-btn"
+                              title="تعديل"
                               aria-label={"تعديل " + rowLabel(r)}
                               onClick={() => {
                                 setEditing(r);

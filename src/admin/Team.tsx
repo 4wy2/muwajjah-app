@@ -123,7 +123,7 @@ export default function Team() {
         ) : !q.data?.length ? (
           <Empty title="لم يُضف مساهمون بعد" />
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap stack">
             <table>
               <thead>
                 <tr>
@@ -137,14 +137,14 @@ export default function Team() {
               <tbody>
                 {q.data.map((m) => (
                   <tr key={m.user_id}>
-                    <td>
+                    <td className="cell-main">
                       <strong>{m.display_name || m.email}</strong>
                       <small className="block" dir="ltr">
                         {m.email}
                       </small>
                     </td>
-                    <td>{m.university_ids?.length || 0}</td>
-                    <td>
+                    <td data-label="الجامعات">{m.university_ids?.length || 0}</td>
+                    <td data-label="الصلاحيات">
                       {[
                         m.can_edit && "تعديل",
                         m.can_publish && "نشر",
@@ -153,8 +153,8 @@ export default function Team() {
                         .filter(Boolean)
                         .join("، ") || "عرض فقط"}
                     </td>
-                    <td>{m.is_enabled ? "مفعّل" : "موقوف"}</td>
-                    <td>
+                    <td className="cell-status">{m.is_enabled ? "مفعّل" : "موقوف"}</td>
+                    <td className="cell-actions">
                       <button
                         className="text-btn"
                         onClick={() => {

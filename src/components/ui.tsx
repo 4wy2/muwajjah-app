@@ -240,3 +240,19 @@ export function useDebounce<T>(value: T, delay = 300) {
   }, [value, delay]);
   return v;
 }
+
+// On phones the section nav is a horizontal strip: keep the current section
+// in view instead of leaving it scrolled off the edge.
+export function useActiveNavIntoView(path: string) {
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+    const strip = document.querySelector<HTMLElement>(".workspace-nav nav");
+    const active = strip?.querySelector<HTMLElement>("a.active");
+    if (!strip || !active || strip.scrollWidth <= strip.clientWidth) return;
+    // scrollIntoView handles right-to-left scrolling; "nearest" keeps the
+    // page itself from jumping vertically.
+    active.scrollIntoView({ inline: "center", block: "nearest" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [path]);
+}

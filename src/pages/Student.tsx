@@ -32,12 +32,14 @@ import {
   Empty,
   Field,
   useToast,
+  useActiveNavIntoView,
 } from "../components/ui";
 import UniversityCard, { FavoriteButton } from "../components/UniversityCard";
 import type { Program } from "../lib/types";
 import { date, friendly } from "../lib/utils";
 export default function Student() {
   const commercial = useCommercialVisible();
+  useActiveNavIntoView(useLocation().pathname);
   return (
     <div className="workspace">
       <aside className="workspace-nav">
@@ -244,7 +246,7 @@ export function Scores() {
           <Link to="/">اختر جامعة للبدء</Link>
         </Empty>
       ) : (
-        <div className="panel table-wrap">
+        <div className="panel table-wrap stack">
           <table>
             <thead>
               <tr>
@@ -263,7 +265,7 @@ export function Scores() {
             <tbody>
               {q.data.map((s) => (
                 <tr key={s.id}>
-                  <td>
+                  <td className="cell-main">
                     <Link
                       to={
                         "/universities/" + s.university_id + "#admission"
@@ -275,15 +277,15 @@ export function Scores() {
                         "عرض الجامعة"}
                     </Link>
                   </td>
-                  <td>{s.track_name}</td>
-                  <td>{s.school}</td>
-                  <td>{s.aptitude}</td>
-                  <td>{s.achievement}</td>
-                  <td className="accent">
+                  <td className="cell-full" data-label="المسار">{s.track_name}</td>
+                  <td data-label="الثانوية">{s.school}</td>
+                  <td data-label="القدرات">{s.aptitude}</td>
+                  <td data-label="التحصيلي">{s.achievement}</td>
+                  <td className="accent cell-full" data-label="الموزونة">
                     <b>{s.result}%</b>
                   </td>
-                  <td>{date(s.created_at)}</td>
-                  <td>
+                  <td data-label="التاريخ">{date(s.created_at)}</td>
+                  <td className="cell-actions">
                     <button
                       className="icon-btn"
                       aria-label="حذف هذه النتيجة"

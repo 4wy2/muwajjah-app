@@ -224,7 +224,7 @@ export default function Access() {
         ) : !students.data?.length ? (
           <Empty title="لا يوجد طلاب مطابقون" />
         ) : (
-          <div className="table-wrap">
+          <div className="table-wrap stack">
             <table>
               <thead>
                 <tr>
@@ -236,16 +236,16 @@ export default function Access() {
               <tbody>
                 {students.data.map((s) => (
                   <tr key={s.user_id}>
-                    <td>
+                    <td className="cell-main">
                       {s.display_name}
                       <small className="block" dir="ltr">
                         {s.email}
                       </small>
                     </td>
-                    <td>
+                    <td className="cell-status">
                       {s.plus_until ? "حتى " + date(s.plus_until) : "مجاني"}
                     </td>
-                    <td>
+                    <td className="cell-actions">
                       <button
                         className="text-btn"
                         disabled={![7, 30, 90, 365].includes(days)}

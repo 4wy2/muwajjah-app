@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Compass,
@@ -8,6 +8,7 @@ import {
   LogOut,
   ShieldCheck,
   X,
+  ArrowUp,
 } from "lucide-react";
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { usePreferences } from "../lib/store";
@@ -22,6 +23,27 @@ import { PREVIEW } from "../lib/config";
 import { useSitePrivate } from "../api/catalog";
 import TeamGate from "./TeamGate";
 import { blockAnalytics, track, trackPage } from "../lib/analytics";
+// Shown after scrolling down a long page; hidden while the compare dock is up.
+function ToTop({ hidden }: { hidden: boolean }) {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const on = () => setShow(window.scrollY > 900);
+    on();
+    window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
+  if (!show || hidden) return null;
+  return (
+    <button
+      className="to-top"
+      aria-label="العودة لأعلى الصفحة"
+      title="لأعلى"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+    >
+      <ArrowUp size={20} />
+    </button>
+  );
+}
 export default function Layout() {
   const { user } = useAuth();
   const member = useMember();
@@ -167,6 +189,13 @@ export default function Layout() {
         </nav>
         <small>© {new Date().getFullYear()} مُوجّه</small>
       </footer>
+      <ToTop
+        hidden={
+          prefs.comparison.length > 0 &&
+          !!compareVisible &&
+          location.pathname !== "/compare"
+        }
+      />
       {prefs.comparison.length > 0 &&
         compareVisible &&
         location.pathname !== "/compare" && (
