@@ -131,9 +131,11 @@ export function usePlus() {
         .order("expires_at", { ascending: false })
         .limit(1);
       if (error) throw error;
-      return data?.[0] as
+      // null, not undefined: React Query treats undefined as a failed query,
+      // which showed every student without Plus an error.
+      return (data?.[0] ?? null) as
         | { expires_at: string; starts_at: string; source: string }
-        | undefined;
+        | null;
     },
   });
 }
