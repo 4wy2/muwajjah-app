@@ -96,8 +96,8 @@ export default function Layout() {
     !plus.data &&
     !location.pathname.startsWith("/admin") &&
     !location.pathname.startsWith("/student/subscription");
-  // One list feeds the top navigation (laptop) and the bottom tab bar (phones
-  // and tablets): [path, label, icon, exact match, short label].
+  // One list feeds the top navigation (laptop) and the tab row under the bar
+  // (phones and tablets): [path, label, icon, exact match, short label].
   const links: [string, string, typeof Compass, boolean, string][] = [
     ["/", "دليل الجامعات", GraduationCap, true, "الجامعات"],
     ...(compareVisible
@@ -182,6 +182,18 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      {!gated && (
+        <nav className="mobile-tabs" aria-label="القائمة الرئيسية">
+          <div className="shell mt-inner">
+            {links.map(([to, , Icon, end, short]) => (
+              <NavLink key={to} to={to} end={end} className={activeClass(to)}>
+                <Icon size={17} aria-hidden="true" />
+                {short}
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+      )}
       {PREVIEW && !gated && (
         <div className="preview-bar" role="note">
           نسخة تجريبية، والموقع قيد التجهيز.
@@ -235,18 +247,6 @@ export default function Layout() {
           </div>
         </div>
       </footer>
-      {!gated && !location.pathname.startsWith("/auth") && (
-        <nav className="bottom-nav" aria-label="التنقل السريع">
-          {links.map(([to, label, Icon, end, short]) => (
-            <NavLink key={to} to={to} end={end} className={activeClass(to)}>
-              <span className="bn-icon" aria-hidden="true">
-                <Icon size={21} />
-              </span>
-              {short}
-            </NavLink>
-          ))}
-        </nav>
-      )}
       <ToTop
         hidden={
           prefs.comparison.length > 0 &&

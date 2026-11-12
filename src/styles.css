@@ -2520,3 +2520,23 @@ dialog form > .btn.primary:last-child {
   .block-body { font-size: 15px; line-height: 1.95; }
   .track { padding: 14px; }
 }
+
+/* Phones and tablets: the sections sit in a tab row under the top bar
+   (it scrolls away with the page; the slim bar above stays). */
+.mobile-tabs { display: none; }
+@media (max-width: 899px) {
+  .mobile-tabs { display: block; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .mt-inner { display: flex; gap: 6px; padding: 6px 0; }
+  .mobile-tabs a {
+    flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    min-height: 38px; padding: 6px 8px; border-radius: 10px; white-space: nowrap;
+    color: var(--muted); font-weight: 700; font-size: 13.5px;
+  }
+  .mobile-tabs a.active { background: var(--tint); color: var(--accent); }
+  /* No bottom bar any more: floating controls go back to the edge. */
+  .site-footer { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .to-top { bottom: calc(16px + env(safe-area-inset-bottom)); }
+  .compare-dock { bottom: calc(14px + env(safe-area-inset-bottom)); }
+  .toast { bottom: calc(18px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 360px) { .mobile-tabs a svg { display: none; } }
