@@ -40,6 +40,9 @@ beforeAll(async () => {
       ('${OWNER}','owner@x.sa','{}'), ('${EDITOR}','editor@x.sa','{"guide_signup":true,"guide_name":"محرر"}'),
       ('${STUDENT}','s1@x.sa','{"guide_account_kind":"student"}'), ('${STUDENT2}','s2@x.sa','{"guide_account_kind":"student"}');`);
   for (const f of ["original/schema.sql", "original/plus.sql", "001_student_features.sql"]) await db.exec(file(f));
+  // Like Supabase: its default privileges grant execute on new functions to
+  // anon and authenticated directly, so "revoke from public" alone leaves them.
+  await db.exec(`grant execute on all functions in schema public to anon, authenticated;`);
   await db.exec(`insert into guide_admins(user_id,is_owner,can_edit,can_publish,can_delete) values ('${OWNER}',true,true,true,true);`);
   await as(OWNER);
   U = (await q(`insert into guide_universities(name) values('جامعة أ') returning id`))[0].id;
@@ -371,17 +374,18 @@ describe("migration 010 (prepared): visitors cannot call admin functions", () =>
     await root();
     await db.exec(file("010_revoke_anon_admin_rpc.sql"));
     await db.exec(file("010_revoke_anon_admin_rpc.sql"));
+    expect((await q(`select has_function_privilege('anon','public.guide_list_team()','execute') p`))[0].p).toBe(false);
     await as(null);
     expect(await fails(`select guide_list_team()`)).toBe(true);
-    expect(await fails(`select guide_is_owner()`)).toBe(true);
+    // Policy helpers stay callable: row-level policies run them as the visitor.
+    expect(await fails(`select guide_is_owner()`)).toBe(false);
     expect((await q(`select guide_feature_state('comparison') s`))[0].s).toBeTruthy();
     expect(await fails(`select id from guide_universities where published`)).toBe(false);
     await as(OWNER);
     expect((await q(`select guide_is_owner() o`))[0].o).toBe(true);
     await root();
     await db.exec(file("010_revoke_anon_admin_rpc_rollback.sql"));
-    await as(null);
-    expect(await fails(`select guide_is_owner()`)).toBe(false);
+    expect((await q(`select has_function_privilege('anon','public.guide_list_team()','execute') p`))[0].p).toBe(true);
   });
 });
 
@@ -415,5 +419,26 @@ describe("migration 011: private site switch", () => {
     await db.exec(file("011_private_site_rollback.sql"));
     await as(null);
     expect(await unis()).toBeGreaterThan(0);
+  });
+});
+
+describe("migration 010 together with 011", () => {
+  it("visitors can still read public content after 010, and get nothing (no error) while private", async () => {
+    await root();
+    await db.exec(`update guide_universities set published=true, deleted_at=null where id='${U}'`);
+    await db.exec(file("011_private_site.sql"));
+    await db.exec(file("010_revoke_anon_admin_rpc.sql"));
+    await db.exec(`update guide_site_settings set private=false`);
+    await as(null);
+    expect(await fails(`select id from guide_universities where published`)).toBe(false);
+    expect((await q(`select count(*)::int n from guide_universities where published`))[0].n).toBeGreaterThan(0);
+    expect(await fails(`select id from guide_programs`)).toBe(false);
+    expect(await fails(`select guide_list_team()`)).toBe(true);
+    await root();
+    await db.exec(`update guide_site_settings set private=true`);
+    await as(null);
+    expect((await q(`select count(*)::int n from guide_universities where published`))[0].n).toBe(0);
+    await root();
+    await db.exec(file("010_revoke_anon_admin_rpc_rollback.sql"));
   });
 });

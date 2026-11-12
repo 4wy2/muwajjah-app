@@ -7,8 +7,7 @@ begin
     where p.pronamespace = 'public'::regnamespace
       and p.proname in ('guide_set_member','guide_set_member_details','guide_remove_member',
         'guide_list_team','guide_team_directory','guide_pending_signups',
-        'guide_delete_archived_analytics','guide_analytics_size','guide_is_admin',
-        'guide_is_owner','guide_allowed','guide_record_audit')
+        'guide_delete_archived_analytics','guide_analytics_size','guide_record_audit')
   loop
     execute format('grant execute on function %s to anon', f.sig);
   end loop;

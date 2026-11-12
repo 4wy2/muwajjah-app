@@ -4,6 +4,10 @@
 -- future mistake inside one of them cannot be reached without signing in.
 -- Public functions (feature state, program search, interest, compare,
 -- missing-search, google-enabled, program counts) are NOT touched.
+-- guide_is_admin, guide_is_owner and guide_allowed are NOT touched either:
+-- row-level policies call them as the visitor's own role, so revoking them
+-- from anon would break every public read (checked 2026-11-12: 7, 16 and 15
+-- policies use them).
 -- Verify after applying: Supabase Advisors → anon_security_definer_function_executable
 -- should list only the public functions. Rollback: 010_revoke_anon_admin_rpc_rollback.sql
 begin;
@@ -15,8 +19,7 @@ begin
     where p.pronamespace = 'public'::regnamespace
       and p.proname in ('guide_set_member','guide_set_member_details','guide_remove_member',
         'guide_list_team','guide_team_directory','guide_pending_signups',
-        'guide_delete_archived_analytics','guide_analytics_size','guide_is_admin',
-        'guide_is_owner','guide_allowed','guide_record_audit')
+        'guide_delete_archived_analytics','guide_analytics_size','guide_record_audit')
   loop
     execute format('revoke execute on function %s from anon, public', f.sig);
     execute format('grant execute on function %s to authenticated', f.sig);
