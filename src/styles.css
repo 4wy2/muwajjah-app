@@ -2561,3 +2561,29 @@ dialog form > .btn.primary:last-child {
   .hero-modes button { flex: 1; justify-content: center; white-space: nowrap; }
 }
 @media (max-width: 380px) { .hero-modes button { font-size: 12.5px; padding: 6px 8px; gap: 4px; } }
+/* Account menu: one button in the bar, details in a small panel. */
+.account-menu { position: relative; }
+.account-chip { cursor: pointer; }
+.account-chip .chev { color: var(--muted); transition: transform .15s; }
+.account-chip[aria-expanded="true"] .chev { transform: rotate(180deg); }
+.menu-panel {
+  position: absolute; top: calc(100% + 8px); inset-inline-end: 0; z-index: 60; min-width: 230px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 6px;
+  box-shadow: 0 16px 40px #1d133d26; display: grid; gap: 2px;
+}
+.menu-who { padding: 8px 10px 10px; border-bottom: 1px solid var(--line); margin-bottom: 4px; display: grid; gap: 2px; }
+.menu-who strong { font-size: 14.5px; }
+.menu-who small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: end; }
+.menu-panel a, .menu-panel button {
+  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; padding: 8px 10px;
+  border: 0; background: none; border-radius: 10px; color: var(--text); font-weight: 600; font-size: 14.5px; text-align: start;
+}
+.menu-panel a:hover, .menu-panel button:hover { background: var(--bg); color: var(--text); }
+.menu-panel svg { color: var(--muted); flex: none; }
+.menu-panel .danger, .menu-panel .danger svg { color: var(--danger); }
+@media (max-width: 899px) {
+  .account-chip { padding: 3px 3px 3px 8px; border: 1px solid var(--line); background: var(--surface); gap: 4px; }
+  .account-chip .chev { width: 14px; }
+}
+@media (max-width: 899px) { .topbar .tb-nav + .tb-actions, .tb-actions { margin-inline-start: auto; } }
+.menu-panel { max-width: calc(100vw - 24px); }

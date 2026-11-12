@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
   Compass,
@@ -9,6 +9,9 @@ import {
   ShieldCheck,
   X,
   ArrowUp,
+  ChevronDown,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { usePreferences } from "../lib/store";
@@ -23,6 +26,89 @@ import { PREVIEW } from "../lib/config";
 import { useSitePrivate } from "../api/catalog";
 import TeamGate from "./TeamGate";
 import { blockAnalytics, track, trackPage } from "../lib/analytics";
+
+// Everything about the signed-in account sits behind one button, so the bar
+// holds only the brand, the menu and this.
+function AccountMenu({
+  initial,
+  name,
+  email,
+  gated,
+  admin,
+  onSignOut,
+}: {
+  initial: string;
+  name: string;
+  email: string;
+  gated: boolean;
+  admin: boolean;
+  onSignOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const theme = usePreferences((s) => s.theme);
+  const setTheme = usePreferences((s) => s.setTheme);
+  const dark =
+    theme === "dark" ||
+    (theme === "system" && document.documentElement.dataset.theme === "dark");
+  useEffect(() => setOpen(false), [location.pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const away = (e: Event) => {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  return (
+    <div className="account-menu" ref={ref}>
+      <button
+        className="account-chip"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="قائمة الحساب"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="avatar" aria-hidden="true">
+          {initial}
+        </span>
+        <span className="account-name">حسابي</span>
+        <ChevronDown size={15} className="chev" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="menu-panel" role="menu">
+          <div className="menu-who">
+            {name && <strong>{name}</strong>}
+            <small dir="ltr">{email}</small>
+          </div>
+          {!gated && (
+            <Link role="menuitem" to="/student/dashboard">
+              <UserRound size={17} /> بوابة الطالب
+            </Link>
+          )}
+          {admin && (
+            <Link role="menuitem" to="/admin">
+              <ShieldCheck size={17} /> لوحة الإدارة
+            </Link>
+          )}
+          <button role="menuitem" onClick={() => setTheme(dark ? "light" : "dark")}>
+            {dark ? <Sun size={17} /> : <Moon size={17} />}
+            {dark ? "الوضع النهاري" : "الوضع الليلي"}
+          </button>
+          <button role="menuitem" className="danger" onClick={onSignOut}>
+            <LogOut size={17} /> تسجيل الخروج
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 // Shown after scrolling down a long page; hidden while the compare dock is up.
 function ToTop({ hidden }: { hidden: boolean }) {
   const [show, setShow] = useState(false);
@@ -115,11 +201,10 @@ export default function Layout() {
       isActive || (to === "/" && location.pathname.startsWith("/universities"))
         ? "active"
         : "";
-  const initial = String(
-    user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email || "م",
-  )
-    .trim()
-    .charAt(0);
+  const displayName = String(
+    user?.user_metadata?.full_name || user?.user_metadata?.name || "",
+  ).trim();
+  const initial = (displayName || user?.email || "م").trim().charAt(0);
   return (
     <>
       <a className="skip-link" href="#main">
@@ -146,34 +231,19 @@ export default function Layout() {
             </nav>
           )}
           <div className="tb-actions">
-            <ThemeToggle />
+            {!user && <ThemeToggle />}
             {user ? (
-              <>
-                {!gated && (
-                  <Link
-                    className="account-chip"
-                    to="/student/dashboard"
-                    aria-label="حسابي"
-                    title="حسابي"
-                  >
-                    <span className="avatar" aria-hidden="true">
-                      {initial}
-                    </span>
-                    <span className="account-name">حسابي</span>
-                  </Link>
-                )}
-                <button
-                  className="icon-btn"
-                  aria-label="تسجيل الخروج"
-                  title="تسجيل الخروج"
-                  onClick={async () => {
-                    const { error } = await db.auth.signOut();
-                    if (error) toast(friendly(error), true);
-                  }}
-                >
-                  <LogOut size={19} />
-                </button>
-              </>
+              <AccountMenu
+                initial={initial}
+                name={displayName}
+                email={user.email || ""}
+                gated={gated}
+                admin={!!member.data?.is_enabled}
+                onSignOut={async () => {
+                  const { error } = await db.auth.signOut();
+                  if (error) toast(friendly(error), true);
+                }}
+              />
             ) : (
               <Link
                 className="btn primary compact login-btn"
