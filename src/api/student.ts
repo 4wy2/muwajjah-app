@@ -150,6 +150,18 @@ const PLUS_LABELS: Record<string, string> = {
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
 };
+// The features the upgrade unlocks right now (plus or locked), by key.
+export function usePlusFeatureKeys(): string[] {
+  const { user } = useAuth();
+  const states = useQuery({
+    queryKey: ["commercial-states", user?.id || "guest"],
+    staleTime: 60_000,
+    queryFn: () => featureStates(),
+  });
+  return Object.keys(PLUS_LABELS).filter(
+    (_, i) => states.data?.[i] === "locked" || states.data?.[i] === "plus",
+  );
+}
 export function usePlusFeatures(): string[] {
   const { user } = useAuth();
   const states = useQuery({

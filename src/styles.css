@@ -2587,3 +2587,55 @@ dialog form > .btn.primary:last-child {
 }
 @media (max-width: 899px) { .topbar .tb-nav + .tb-actions, .tb-actions { margin-inline-start: auto; } }
 .menu-panel { max-width: calc(100vw - 24px); }
+
+/* ---------- Account upgrade page ---------- */
+.upgrade { max-width: 720px; margin-inline: auto; display: grid; gap: 18px; }
+.upgrade-hero {
+  text-align: center; padding: 28px 22px 24px; border-radius: 20px; color: #fff;
+  background: linear-gradient(150deg, #4b33b5 0%, #6a4fcf 55%, #8d74ea 100%);
+  box-shadow: 0 14px 34px #4b33b533;
+}
+.upgrade-mark {
+  width: 52px; height: 52px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center;
+  background: #ffffff26; border: 1px solid #ffffff40; margin-bottom: 10px;
+}
+.upgrade-hero h1 { font-size: clamp(24px, 4vw, 32px); font-weight: 800; margin: 0 0 6px; color: #fff; }
+.upgrade-hero p { margin: 0 auto; max-width: 46ch; color: #efeaff; font-size: 15px; line-height: 1.8; }
+.benefits { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.benefits li {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px;
+}
+.benefit-icon {
+  width: 44px; height: 44px; border-radius: 13px; display: inline-flex; align-items: center; justify-content: center;
+  background: var(--tint); color: var(--accent);
+}
+.benefits h2 { font-size: 16.5px; font-weight: 800; margin: 2px 0 4px; }
+.benefits p { margin: 0; color: var(--muted); font-size: 14.5px; line-height: 1.8; }
+.benefit-check { color: #1d8a55; margin-top: 4px; }
+.compare-plans { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 6px 16px; }
+.plan-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) 88px 88px; gap: 8px; align-items: center;
+  padding: 11px 0; border-top: 1px solid var(--line); font-size: 14.5px;
+}
+.plan-row > svg { justify-self: center; color: #1d8a55; }
+.plan-row > svg.muted { color: var(--muted); opacity: .6; }
+.plan-head { border-top: 0; font-weight: 800; font-size: 13px; color: var(--muted); }
+.plan-head span { text-align: center; }
+.plan-head span:last-child { color: var(--accent); }
+.upgrade-cta {
+  text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 22px 18px; display: grid; justify-items: center; gap: 8px;
+}
+.upgrade-cta p { margin: 0; }
+.upgrade-price { font-size: 30px; font-weight: 800; color: var(--accent); line-height: 1.2; }
+.upgrade-cta .btn { min-width: 220px; }
+.upgrade-cta .notice { display: flex; gap: 8px; align-items: flex-start; text-align: start; font-size: 13.5px; }
+.upgrade-cta .notice svg { flex: none; margin-top: 3px; }
+@media (max-width: 480px) {
+  .upgrade-hero { padding: 22px 16px 20px; border-radius: 18px; }
+  .benefits li { padding: 14px; gap: 12px; }
+  .benefit-icon { width: 40px; height: 40px; }
+  .plan-row { grid-template-columns: minmax(0, 1fr) 64px 72px; font-size: 13.5px; }
+  .upgrade-cta .btn { width: 100%; }
+}

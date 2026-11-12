@@ -147,7 +147,7 @@ export default function Layout() {
       if (n > 0) {
         void queryClient.invalidateQueries({ queryKey: ["plus"] });
         void queryClient.invalidateQueries({ queryKey: ["feature"] });
-        toast("تم تفعيل اشتراكك");
+        toast("تمت ترقية حسابك");
       }
     });
   }, [user?.id]);
@@ -170,7 +170,8 @@ export default function Layout() {
     plusFeatures.length > 0 &&
     !plus.data &&
     !location.pathname.startsWith("/admin") &&
-    !location.pathname.startsWith("/student/subscription");
+    !location.pathname.startsWith("/student/subscription") &&
+    location.pathname !== "/upgrade";
   // One list feeds the top navigation (laptop) and the tab row under the bar
   // (phones and tablets): [path, label, icon, exact match, short label].
   const links: [string, string, typeof Compass, boolean, string][] = [
@@ -268,16 +269,14 @@ export default function Layout() {
       {showPromo && (
         <div className="promo-bar" role="note">
           <span>
-            <strong>مُوجّه بلس</strong>
-            {offer.data?.season_label ? " لـ" + offer.data.season_label : ""}:{" "}
-            {plusFeatures.join("، ")}.
+            <strong>رقِّ حسابك</strong>: {plusFeatures.join("، ")}.
           </span>
           <Link
             className="btn primary compact"
-            to="/student/subscription"
+            to="/upgrade"
             onClick={() => track("subscribe_click", { from: "promo_bar" })}
           >
-            اشترك{offer.data?.price_text ? " بـ" + offer.data.price_text : ""}
+            اعرف المميزات
           </Link>
         </div>
       )}

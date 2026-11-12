@@ -258,10 +258,10 @@ function MajorResults({
     return (
       <div className="panel locked-panel">
         <Lock size={28} aria-hidden="true" />
-        <h2>البحث بالتخصص من مزايا مُوجّه بلس</h2>
+        <h2>البحث بالتخصص من مزايا الحساب المُرقّى</h2>
         <p>اكتب التخصص اللي تبيه، وتطلع لك كل الجامعات اللي تدرّسه في مكان واحد.</p>
-        <Link className="btn primary" to="/student/subscription">
-          اعرف أكثر عن الاشتراك
+        <Link className="btn primary" to="/upgrade">
+          اعرف المميزات
         </Link>
       </div>
     );

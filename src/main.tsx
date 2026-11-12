@@ -27,6 +27,7 @@ import "./styles.css";
 // browsing, so a site update can never break a page that is already open.
 import University from "./pages/University";
 import Compare from "./pages/Compare";
+import Upgrade from "./pages/Upgrade";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Auth from "./pages/Auth";
@@ -91,6 +92,7 @@ function App() {
                     <Route index element={<Home />} />
                     <Route path="universities/:id" element={<University />} />
                     <Route path="compare" element={<Compare />} />
+                    <Route path="upgrade" element={<Upgrade />} />
                     <Route path="privacy" element={<Privacy />} />
                     <Route path="terms" element={<Terms />} />
                     <Route path="auth/:mode" element={<Auth />} />

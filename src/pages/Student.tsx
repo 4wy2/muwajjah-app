@@ -1,5 +1,6 @@
 import { track } from "../lib/analytics";
 import { useOffer } from "../api/commerce";
+import { UpgradeView } from "./Upgrade";
 import { useState } from "react";
 import { NavLink, Link, Outlet, Navigate, useLocation } from "react-router-dom";
 import {
@@ -50,7 +51,7 @@ export default function Student() {
             ["dashboard", "لوحتي", LayoutDashboard],
             ["favorites", "المفضلة", Star],
             ["scores", "سجل الموزونة", Calculator],
-            ["subscription", "اشتراكي", Crown],
+            ["subscription", "ترقية الحساب", Crown],
             ["settings", "الإعدادات", Settings],
           ]
             .filter(([route]) => route !== "subscription" || commercial)
@@ -108,7 +109,7 @@ export function Dashboard() {
             <Crown />
             <span>حالة الحساب</span>
             <strong>
-              {plus.isSuccess ? (plus.data ? "بلس" : "مجاني") : "—"}
+              {plus.isSuccess ? (plus.data ? "مُرقّى" : "مجاني") : "—"}
             </strong>
           </Link>
         )}
@@ -313,81 +314,11 @@ export function Scores() {
 }
 export function Subscription() {
   const q = usePlus();
-  const plusFeatures = usePlusFeatures();
-  const { user } = useAuth();
   const offer = useOffer();
   const commercial = useCommercialVisible();
   if (q.isSuccess && offer.isSuccess && !commercial)
     return <Navigate to="/student/dashboard" replace />;
-  const o = offer.data;
-  return (
-    <>
-      <PageHeading title="اشتراكي" />
-      {q.isPending || offer.isPending ? (
-        <Loading />
-      ) : q.error ? (
-        <ErrorState error={q.error} retry={() => q.refetch()} />
-      ) : (
-        <div className="panel subscription">
-          <Crown size={40} />
-          <span className="badge plus">
-            {q.data ? "مُوجّه بلس" : "الحساب المجاني"}
-          </span>
-          <h2>
-            {q.data
-              ? "اشتراكك مفعّل"
-              : "مُوجّه بلس" + (o?.season_label ? " لـ" + o.season_label : "")}
-          </h2>
-          {q.data ? (
-            <p>اشتراكك مفعّل حتى {date(q.data.expires_at)}.</p>
-          ) : (
-            <>
-              <ul className="plus-features">
-                {plusFeatures.map((f) => (
-                  <li key={f}>{f}</li>
-                ))}
-              </ul>
-              {o?.price_text && <p className="price">{o.price_text}</p>}
-              {o?.season_ends_at && (
-                <p className="muted">
-                  الاشتراك موسمي وينتهي في {date(o.season_ends_at)}.
-                </p>
-              )}
-              {o?.purchase_url ? (
-                <>
-                  <a
-                    className="btn primary"
-                    onClick={() => track("subscribe_click", { from: "subscription_page" })}
-                    href={o.purchase_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    اشترك الآن
-                  </a>
-                  <p className="notice">
-                    مهم: ادفع بنفس الإيميل المسجل في حسابك
-                    {user?.email ? (
-                      <>
-                        {" "}
-                        (<span dir="ltr">{user.email}</span>)
-                      </>
-                    ) : null}
-                    ، وبيتفعل اشتراكك تلقائيًا بعد الدفع.
-                  </p>
-                </>
-              ) : (
-                <p className="notice">
-                  {o?.note ||
-                    "للاشتراك تواصل مع إدارة مُوجّه، ويتفعل اشتراكك على حسابك بعد التحويل."}
-                </p>
-              )}
-              {o?.purchase_url && o?.note && <p className="muted">{o.note}</p>}
-            </>
-          )}
-        </div>
-      )}
-    </>
-  );
+  return <UpgradeView />;
 }
 export function StudentSettings() {
   const { user } = useAuth();

@@ -51,12 +51,9 @@ export default function Compare() {
     );
   if (feature.data === "locked")
     return (
-      <Empty title="مقارنة الجامعات ضمن مزايا بلس">
-        <Link
-          className="btn primary"
-          to={user ? "/student/subscription" : "/auth/login?next=%2Fcompare"}
-        >
-          عرض حسابي
+      <Empty title="مقارنة الجامعات من مزايا الحساب المُرقّى">
+        <Link className="btn primary" to="/upgrade">
+          اعرف المميزات
         </Link>
       </Empty>
     );

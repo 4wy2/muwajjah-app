@@ -447,9 +447,9 @@ function Cutoffs({ id, sections, website }: { id: string; sections: Section[]; w
       <Block id="cutoffs" title="نسب القبول السابقة">
         <div className="plus-callout">
           <LockKeyhole size={22} />
-          <p>نسب القبول السابقة متاحة لمشتركي مُوجّه بلس.</p>
-          <Link to={user ? "/student/subscription" : "/auth/login?next=" + encodeURIComponent(location.pathname)} className="btn secondary compact">
-            {user ? "تفاصيل الاشتراك" : "سجّل دخولك"}
+          <p>نسب القبول السابقة تنفتح لك بعد ترقية حسابك.</p>
+          <Link to="/upgrade" className="btn secondary compact">
+            اعرف المميزات
           </Link>
         </div>
       </Block>
