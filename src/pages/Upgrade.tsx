@@ -8,6 +8,8 @@ import {
   Sparkles,
   ShieldCheck,
   Bookmark,
+  SlidersHorizontal,
+  Share2,
   X,
   ArrowLeft,
   type LucideIcon,
@@ -59,6 +61,20 @@ export const BENEFITS: Record<
     to: "/student/favorites",
     cta: "افتح مفضلتك",
   },
+  filters: {
+    icon: SlidersHorizontal,
+    title: "فلتر الجامعات بالمنطقة والسكن",
+    text: "اختر منطقتك أو السكن اللي يناسبك، وتطلع لك الجامعات المناسبة بضغطة.",
+    to: "/",
+    cta: "جرّب الفلاتر",
+  },
+  compare_share: {
+    icon: Share2,
+    title: "شارك مقارنتك برابط",
+    text: "أرسل المقارنة لأهلك أو صديقك، وتنفتح عندهم نفس الجامعات جنب بعض.",
+    to: "/compare",
+    cta: "افتح المقارنة",
+  },
 };
 
 // Short verbs for the headline, and names for the "what stays free" answer.
@@ -69,12 +85,16 @@ const VERBS: Record<string, string> = {
   comparison: "قارن",
   historical_cutoffs: "شوف نسب القبول",
   saving: "احفظ اختياراتك",
+  filters: "فلتر بالمنطقة والسكن",
+  compare_share: "شارك مقارنتك",
 };
 const FREE_NAMES: Record<string, string> = {
   program_search: "البحث بالتخصص",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
   saving: "حفظ المفضلة ونتائج الموزونة",
+  filters: "فلترة الجامعات",
+  compare_share: "مشاركة المقارنة",
 };
 const BASE_FREE = ["صفحات الجامعات كاملة", "السكن", "الشروط", "حاسبة الموزونة"];
 export const joinAr = (items: string[]) =>

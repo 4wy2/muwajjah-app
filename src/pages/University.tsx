@@ -1,3 +1,4 @@
+import { usePreferences } from "../lib/store";
 import { useUpgradeSheet } from "../lib/store";
 import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -601,6 +602,7 @@ export default function University() {
         (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
       );
       if (!preview) {
+        usePreferences.getState().addRecent(id);
         void interest("university", id);
         track("university_view", { university: u.data.name });
       }

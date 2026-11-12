@@ -1,8 +1,8 @@
 import { useUpgradeSheet } from "../lib/store";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { track } from "../lib/analytics";
-import { Link, Navigate } from "react-router-dom";
-import { X, GitCompareArrows } from "lucide-react";
+import { Link, Navigate, useLocation, useSearchParams } from "react-router-dom";
+import { X, GitCompareArrows, Share2, Lock } from "lucide-react";
 import { useCatalog, useFeature } from "../api/catalog";
 import { usePreferences } from "../lib/store";
 import { useAuth } from "../auth/AuthProvider";
@@ -24,6 +24,48 @@ export default function Compare() {
   const toast = useToast();
   const selected = (q.data || []).filter((u) => ids.includes(u.id));
   const canCompare = feature.data === "free" || feature.data === "plus";
+  const shareState = useFeature("compare_share", user?.id).data || "hidden";
+  const setComparison = usePreferences((s) => s.setComparison);
+  const [params, setParams] = useSearchParams();
+  const loc = useLocation();
+  // A shared link (?u=id,id) opens that comparison once the visitor may compare.
+  const shared = params.get("u");
+  const opened = useRef(false);
+  useEffect(() => {
+    if (!shared || !canCompare || !q.data || opened.current) return;
+    const valid = shared
+      .split(",")
+      .filter((id) => q.data!.some((u) => u.id === id))
+      .slice(0, 3);
+    opened.current = true;
+    if (valid.length) {
+      setComparison(valid);
+      track("compare_shared_open", { count: valid.length });
+      toast("فتحنا لك المقارنة اللي وصلتك");
+    }
+    setParams(
+      (p) => {
+        p.delete("u");
+        return p;
+      },
+      { replace: true },
+    );
+  }, [shared, canCompare, q.data]);
+  const share = async () => {
+    const url = location.origin + "/compare?u=" + selected.map((u) => u.id).join(",");
+    const text = "مقارنة: " + selected.map((u) => u.name).join(" و ");
+    track("compare_share", { count: selected.length });
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "مقارنة الجامعات | مُوجّه", text, url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      toast("نسخنا رابط المقارنة، أرسله لمن تبي");
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") toast("ما قدرنا ننسخ الرابط. انسخه من هنا: " + url, true);
+    }
+  };
   useEffect(() => {
     if (canCompare && selected.length >= 2)
       track("compare_open", { count: selected.length });
@@ -45,7 +87,7 @@ export default function Compare() {
     return (
       <Empty title="سجّل دخولك لمقارنة الجامعات">
         <p>المقارنة متاحة مجانًا لكل من يسجل دخوله.</p>
-        <Link className="btn primary" to="/auth/login?next=%2Fcompare">
+        <Link className="btn primary" to={"/auth/login?next=" + encodeURIComponent(loc.pathname + loc.search)}>
           تسجيل الدخول
         </Link>
       </Empty>
@@ -96,6 +138,23 @@ export default function Compare() {
               ))}
           </select>
         </div>
+        {selected.length >= 2 && shareState !== "hidden" && (
+          <div className="compare-share">
+            {shareState === "free" || shareState === "plus" ? (
+              <button className="btn secondary compact" onClick={share}>
+                <Share2 size={16} aria-hidden="true" /> شارك المقارنة
+              </button>
+            ) : shareState === "locked" ? (
+              <button className="btn secondary compact" onClick={() => useUpgradeSheet.getState().show("compare_share")}>
+                <Lock size={15} aria-hidden="true" /> شارك المقارنة
+              </button>
+            ) : (
+              <Link className="btn secondary compact" to={"/auth/login?next=" + encodeURIComponent("/compare")}>
+                <Share2 size={16} aria-hidden="true" /> سجّل دخولك للمشاركة
+              </Link>
+            )}
+          </div>
+        )}
         {selected.length ? (
           <div className="table-wrap">
             <table className="comparison-table">

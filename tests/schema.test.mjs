@@ -483,3 +483,32 @@ describe("migration 012: saving as an owner-controlled feature", () => {
     await db.exec(`update guide_site_settings set private=true`);
   });
 });
+
+describe("migration 013: filters and comparison sharing", () => {
+  it("adds both as hidden, lets only the owner change them, and rolls back", async () => {
+    await root();
+    await db.exec(`update guide_site_settings set private=false`);
+    await db.exec(file("012_saving_feature.sql"));
+    await db.exec(file("013_filters_share.sql"));
+    await db.exec(file("013_filters_share.sql"));
+    await as(STUDENT);
+    expect((await q(`select guide_feature_state('filters') s`))[0].s).toBe("hidden");
+    expect((await q(`select guide_feature_state('compare_share') s`))[0].s).toBe("hidden");
+    expect(await fails(`select guide_owner_set_feature('filters','free',false)`)).toBe(true);
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('filters','free',false)`);
+    await q(`select guide_owner_set_feature('compare_share','members',false)`);
+    await q(`select guide_owner_set_feature('saving','members',false)`);
+    await as(null);
+    expect((await q(`select guide_feature_state('filters') s`))[0].s).toBe("free");
+    expect((await q(`select guide_feature_state('compare_share') s`))[0].s).toBe("login");
+    await root();
+    await db.exec(file("013_filters_share_rollback.sql"));
+    expect((await q(`select count(*)::int n from guide_feature_flags where feature_key in ('filters','compare_share')`))[0].n).toBe(0);
+    await as(OWNER);
+    expect(await fails(`select guide_owner_set_feature('filters','free',false)`)).toBe(true);
+    expect(await fails(`select guide_owner_set_feature('saving','free',false)`)).toBe(false);
+    await root();
+    await db.exec(`update guide_site_settings set private=true`);
+  });
+});

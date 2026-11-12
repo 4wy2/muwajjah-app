@@ -55,6 +55,8 @@ export type EventName =
   | "university_view"
   | "major_search"
   | "compare_open"
+  | "compare_share"
+  | "compare_shared_open"
   | "subscribe_click";
 
 export function track(name: EventName, params: Record<string, string | number> = {}) {

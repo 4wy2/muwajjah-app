@@ -23,6 +23,15 @@ interface Student {
   registered_at: string;
   plus_until: string | null;
 }
+// Features the owner controls, in the order they are listed.
+const FEATURE_NAMES: Record<string, string> = {
+  program_search: "البحث بالتخصص",
+  comparison: "مقارنة الجامعات",
+  compare_share: "مشاركة المقارنة برابط",
+  filters: "فلاتر المنطقة والسكن",
+  saving: "حفظ المفضلة ونتائج الموزونة",
+  historical_cutoffs: "النسب السابقة",
+};
 export default function Access() {
   const member = useMember().data!;
   const toast = useToast();
@@ -100,20 +109,17 @@ export default function Access() {
         ) : (
           flags.data
             ?.filter((f) =>
-              ["comparison", "historical_cutoffs", "program_search", "saving"].includes(
-                f.feature_key,
-              ),
+              Object.keys(FEATURE_NAMES).includes(f.feature_key),
+            )
+            .sort(
+              (a, b) =>
+                Object.keys(FEATURE_NAMES).indexOf(a.feature_key) -
+                Object.keys(FEATURE_NAMES).indexOf(b.feature_key),
             )
             .map((f) => (
               <div className="list-row" key={f.feature_key}>
                 <label htmlFor={f.feature_key}>
-                  {f.feature_key === "comparison"
-                    ? "مقارنة الجامعات"
-                    : f.feature_key === "program_search"
-                      ? "البحث بالتخصص"
-                      : f.feature_key === "saving"
-                        ? "حفظ المفضلة ونتائج الموزونة"
-                        : "النسب السابقة"}
+                  {FEATURE_NAMES[f.feature_key]}
                 </label>
                 <select
                   id={f.feature_key}

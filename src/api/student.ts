@@ -150,6 +150,8 @@ const PLUS_LABELS: Record<string, string> = {
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
   saving: "حفظ المفضلة ونتائج الموزونة",
+  filters: "فلترة الجامعات بالمنطقة والسكن",
+  compare_share: "مشاركة المقارنة برابط",
 };
 export type SavingState = "hidden" | "free" | "login" | "plus" | "locked";
 // Saving (favorites + calculator results) follows the owner's setting.

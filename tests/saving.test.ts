@@ -31,3 +31,16 @@ describe("upgrade page lists follow the settings", () => {
     expect(freeAnswer({ saving: "plus" })).not.toContain("المفضلة");
   });
 });
+
+import { matchesFilters } from "../src/pages/Home";
+describe("home filters", () => {
+  const u = (region: string, housing_status: string) => ({ region, housing_status });
+  it("matches region and the housing group", () => {
+    expect(matchesFilters(u("منطقة الرياض", "male_only"), "منطقة الرياض", "m")).toBe(true);
+    expect(matchesFilters(u("منطقة الرياض", "male_only"), "منطقة الرياض", "f")).toBe(false);
+    expect(matchesFilters(u("منطقة عسير", "both"), "", "f")).toBe(true);
+    expect(matchesFilters(u("منطقة عسير", "unavailable"), "", "m")).toBe(false);
+    expect(matchesFilters(u("منطقة عسير", "unknown"), "منطقة الرياض", "")).toBe(false);
+    expect(matchesFilters(u("منطقة عسير", "unknown"), "", "")).toBe(true);
+  });
+});

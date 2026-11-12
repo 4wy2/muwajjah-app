@@ -1,10 +1,13 @@
-import { useUpgradeSheet } from "../lib/store";
+import { useUpgradeSheet, usePreferences } from "../lib/store";
 import { useEffect, useMemo, useState } from "react";
 import {
   Search,
   Lock,
   Landmark,
   BookOpen,
+  SlidersHorizontal,
+  History,
+  X,
 } from "lucide-react";
 
 import { Link, useSearchParams } from "react-router-dom";
@@ -14,10 +17,23 @@ import { useCatalog, useFeature, missingSearch } from "../api/catalog";
 import { useAuth } from "../auth/AuthProvider";
 import { normalize, number } from "../lib/utils";
 import { Empty, ErrorState, useDebounce } from "../components/ui";
-import UniversityCard from "../components/UniversityCard";
+import UniversityCard, { UniversityLogo } from "../components/UniversityCard";
+import type { University } from "../lib/types";
 
-// Search-first catalogue. Owner decisions: no region filter, no housing filter,
-// no program counts on cards. Searching by major is a paid feature
+// Housing filter: a university matches when it says it houses that group.
+// "available"/"limited" say housing exists without saying for whom, so they
+// match both; the card still shows the exact wording.
+const HOUSES: Record<string, string[]> = {
+  m: ["male_only", "both", "available", "limited"],
+  f: ["female_only", "both", "available", "limited"],
+};
+export function matchesFilters(u: Pick<University, "region" | "housing_status">, region: string, house: string) {
+  return (!region || u.region === region) && (!house || (HOUSES[house] || []).includes(u.housing_status));
+}
+const regionLabel = (r: string) => r.replace(/^منطقة\s+/, "");
+
+// Search-first catalogue. Region and housing filters are an owner-controlled
+// feature (filters); no program counts on cards. Searching by major is a paid feature
 // (program_search): hidden while subscriptions are off, locked when they are on.
 export default function Home() {
   const q = useCatalog();
@@ -25,12 +41,16 @@ export default function Home() {
   const feature = useFeature("comparison", user?.id);
   const majorFeature = useFeature("program_search", user?.id);
   const majorState = majorFeature.data || "hidden";
+  const filtersState = useFeature("filters", user?.id).data || "hidden";
+  const canFilter = filtersState === "free" || filtersState === "plus";
   const [params, setParams] = useSearchParams();
   const mode = params.get("by") === "major" && majorState !== "hidden" ? "major" : "uni";
   const [search, setSearch] = useState(params.get("q") || "");
   const term = useDebounce(search);
   const type = params.get("type") || "";
   const sort = params.get("sort") === "city" ? "city" : "name";
+  const region = canFilter ? params.get("region") || "" : "";
+  const house = canFilter && (params.get("housing") === "m" || params.get("housing") === "f") ? params.get("housing")! : "";
   const compareOn = !!feature.data && feature.data !== "hidden";
   const [limit, setLimit] = useState(30);
   const canSearchMajor = majorState === "free" || majorState === "plus";
@@ -53,12 +73,20 @@ export default function Home() {
     () => [...new Set(universities.map((u) => u.type).filter(Boolean))].sort(),
     [q.data],
   );
+  const regions = useMemo(
+    () =>
+      [...new Set(universities.map((u) => u.region).filter(Boolean))].sort((a, b) =>
+        regionLabel(a).localeCompare(regionLabel(b), "ar"),
+      ),
+    [q.data],
+  );
   const results = useMemo(() => {
     const t = normalize(term);
     const list = universities.filter(
       (u) =>
         (!t || normalize(u.name + " " + u.city + " " + u.region).includes(t)) &&
-        (!type || u.type === type),
+        (!type || u.type === type) &&
+        matchesFilters(u, region, house),
     );
     // Name matches first, then city/region matches; then the chosen order.
     const rank = (u: (typeof list)[number]) => (t && !normalize(u.name).includes(t) ? 1 : 0);
@@ -67,7 +95,7 @@ export default function Home() {
     return [...list].sort(
       (a, b) => rank(a) - rank(b) || key(a).localeCompare(key(b), "ar"),
     );
-  }, [q.data, term, type, sort]);
+  }, [q.data, term, type, sort, region, house]);
   useEffect(() => {
     setLimit(30);
     setParams(
@@ -100,7 +128,7 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q.isSuccess]);
   useEffect(() => {
-    if (mode === "uni" && term.trim() && q.isSuccess && results.length === 0 && !type) {
+    if (mode === "uni" && term.trim() && q.isSuccess && results.length === 0 && !type && !region && !house) {
       const t = setTimeout(() => void missingSearch(normalize(term)), 1000);
       return () => clearTimeout(t);
     }
@@ -114,7 +142,16 @@ export default function Home() {
       },
       { replace: true },
     );
-  const searching = !!term.trim() || !!type;
+  const searching = !!term.trim() || !!type || !!region || !!house;
+  const setFilter = (key: "region" | "housing", v: string) =>
+    setParams(
+      (p) => {
+        if (v) p.set(key, v);
+        else p.delete(key);
+        return p;
+      },
+      { replace: true },
+    );
   const setType = (t: string) =>
     setParams(
       (p) => {
@@ -165,7 +202,39 @@ export default function Home() {
       )}
       {mode === "uni" && (
       <>
+      {!searching && <RecentStrip universities={universities} />}
       <div className="results-bar">
+        {canFilter ? (
+          <div className="home-filters" role="group" aria-label="فلترة الجامعات">
+            <label className="sort-select">
+              <span>المنطقة</span>
+              <select value={region} onChange={(e) => setFilter("region", e.target.value)}>
+                <option value="">كل المناطق</option>
+                {regions.map((r) => (
+                  <option value={r} key={r}>
+                    {regionLabel(r)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="sort-select">
+              <span>السكن</span>
+              <select value={house} onChange={(e) => setFilter("housing", e.target.value)}>
+                <option value="">الكل</option>
+                <option value="m">فيه سكن للطلاب</option>
+                <option value="f">فيه سكن للطالبات</option>
+              </select>
+            </label>
+          </div>
+        ) : filtersState === "locked" ? (
+          <button className="btn secondary compact filter-lock" onClick={() => useUpgradeSheet.getState().show("filters")}>
+            <Lock size={15} aria-hidden="true" /> فلترة بالمنطقة والسكن
+          </button>
+        ) : filtersState === "login" ? (
+          <Link className="btn secondary compact filter-lock" to={"/auth/login?next=" + encodeURIComponent("/")}>
+            <SlidersHorizontal size={15} aria-hidden="true" /> سجّل دخولك للفلترة
+          </Link>
+        ) : null}
         <div className="results-tools">
           <span className="result-count" role="status">
             {q.isSuccess ? number(results.length) + (searching ? " نتيجة" : " جامعة") : ""}
@@ -193,8 +262,8 @@ export default function Home() {
         <ErrorState error={q.error} retry={() => q.refetch()} />
       ) : results.length === 0 ? (
         <Empty title="لا توجد جامعات مطابقة">
-          <p>جرّب اسمًا آخر أو مدينة أخرى.</p>
-          {(term || type) && (
+          <p>{region || house ? "جرّب منطقة ثانية أو غيّر خيار السكن." : "جرّب اسمًا آخر أو مدينة أخرى."}</p>
+          {searching && (
             <button
               className="text-btn"
               onClick={() => {
@@ -232,6 +301,37 @@ export default function Home() {
       </>
       )}
     </div>
+  );
+}
+
+// The last universities opened on this device (kept only in this browser).
+function RecentStrip({ universities }: { universities: University[] }) {
+  const recent = usePreferences((s) => s.recent);
+  const clear = usePreferences((s) => s.clearRecent);
+  const items = recent
+    .map((id) => universities.find((u) => u.id === id))
+    .filter(Boolean)
+    .slice(0, 6) as University[];
+  if (!items.length) return null;
+  return (
+    <section className="recent-strip" aria-label="شاهدتها مؤخرًا">
+      <div className="recent-head">
+        <h2>
+          <History size={16} aria-hidden="true" /> شاهدتها مؤخرًا
+        </h2>
+        <button className="icon-btn small" aria-label="مسح ما شاهدته مؤخرًا" onClick={clear}>
+          <X size={16} />
+        </button>
+      </div>
+      <div className="recent-row">
+        {items.map((u) => (
+          <Link to={"/universities/" + u.id} className="recent-item" key={u.id}>
+            <UniversityLogo university={u} />
+            <span>{u.name}</span>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

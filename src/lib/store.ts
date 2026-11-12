@@ -6,6 +6,10 @@ export const usePreferences = create<{
   comparison: string[];
   toggleCompare: (id: string) => boolean;
   clearComparison: () => void;
+  setComparison: (ids: string[]) => void;
+  recent: string[];
+  addRecent: (id: string) => void;
+  clearRecent: () => void;
 }>()(
   persist(
     (set, get) => ({
@@ -23,6 +27,12 @@ export const usePreferences = create<{
         return true;
       },
       clearComparison: () => set({ comparison: [] }),
+      setComparison: (ids) => set({ comparison: ids.slice(0, 3) }),
+      // Kept on this device only; never sent anywhere.
+      recent: [],
+      addRecent: (id) =>
+        set({ recent: [id, ...get().recent.filter((x) => x !== id)].slice(0, 8) }),
+      clearRecent: () => set({ recent: [] }),
     }),
     { name: "muwajjah-preferences-v2" },
   ),
