@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, ENTITY_NAME, LEGAL_ID, RESPONSE_DAYS } from "../lib/config";
+import { CONTACT_EMAIL, ENTITY_NAME, RESPONSE_DAYS } from "../lib/config";
 import { useEffect, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
@@ -52,7 +52,7 @@ export default function Privacy() {
         <ul>
           <li>لا نبيع بياناتك ولا نشاركها لأغراض تسويقية.</li>
           <li>
-            نحفظها لدى مزودي خدمات موثوقين (خارج المملكة) يقتصر دورهم على تشغيل الموقع، ونحميها بالتشفير وصلاحيات تمنع
+            نحفظها لدى مزودي خدمات موثوقين يقتصر دورهم على تشغيل الموقع، ونحميها بالتشفير وصلاحيات تمنع
             أي أحد من الوصول لبيانات غيره.
           </li>
           <li>ما تحفظه في حسابك خاص فيك، ولا يطّلع عليه أحد غيرك.</li>
@@ -67,19 +67,13 @@ export default function Privacy() {
         </ul>
       </Section>
 
-      <Section title="تواصل معنا">
-        <p>
-          {CONTACT_EMAIL ? (
-            <>
-              لأي طلب أو استفسار عن بياناتك راسلنا على <Mail />. وإذا
-            </>
-          ) : (
-            "إذا"
-          )}{" "}
-          لم يُرضك ردنا، يحق لك تقديم شكوى إلى الهيئة السعودية للبيانات والذكاء الاصطناعي.
-        </p>
-        {LEGAL_ID && <p className="muted">{LEGAL_ID}</p>}
-      </Section>
+      {CONTACT_EMAIL && (
+        <Section title="تواصل معنا">
+          <p>
+            لأي طلب أو استفسار عن بياناتك راسلنا على <Mail />.
+          </p>
+        </Section>
+      )}
 
       <p className="muted">قد نحدّث هذه السياسة عند الحاجة، ونوضح تاريخ آخر تحديث أعلى الصفحة.</p>
       <p>
