@@ -26,7 +26,7 @@ const fieldLabel = (t: string, k: string) =>
   k;
 const nameOf = (e: Entry) => {
   const d = e.after_data || e.before_data || {};
-  return String(d.name || d.title || d.program_name || e.row_id.slice(0, 8));
+  return String(d.name || d.title || d.program_name || String(e.row_id || "").slice(0, 8));
 };
 // Describe what an UPDATE did in owner language, based only on what was stored.
 function describe(e: Entry) {

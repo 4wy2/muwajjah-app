@@ -1,3 +1,4 @@
+import { GOOGLE_ONLY } from "../lib/config";
 import { track } from "../lib/analytics";
 import { useOffer } from "../api/commerce";
 import { UpgradeView } from "./Upgrade";
@@ -427,9 +428,11 @@ export function StudentSettings() {
           <button className="btn primary" disabled={busy}>
             {busy ? "جارٍ الحفظ…" : "حفظ التغييرات"}
           </button>
-          <Link className="text-btn" to="/auth/forgot">
-            تغيير كلمة المرور
-          </Link>
+          {!GOOGLE_ONLY && (
+            <Link className="text-btn" to="/auth/forgot">
+              تغيير كلمة المرور
+            </Link>
+          )}
         </form>
       )}
     </>

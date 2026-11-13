@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import { readFileSync } from "node:fs";
 
 // One launch switch for the whole site, set at build time:
 //   LAUNCH=1  → no "preview" bar, search engines allowed (robots).
@@ -20,7 +21,22 @@ function launchSwitch(): Plugin {
       this.emitFile({
         type: "asset",
         fileName: "robots.txt",
-        source: launch ? "User-agent: *\nAllow: /\n" : "User-agent: *\nDisallow: /\n",
+        source: launch
+          ? "User-agent: *\nAllow: /\nSitemap: " + siteUrl + "sitemap.xml\n"
+          : "User-agent: *\nDisallow: /\n",
+      });
+      if (!launch) return;
+      // Published universities (refresh scripts/sitemap-universities.json when
+      // a university is added or removed).
+      const ids: string[] = JSON.parse(readFileSync("scripts/sitemap-universities.json", "utf8"));
+      const urls = ["", "privacy", "terms", ...ids.map((id) => "universities/" + id)];
+      this.emitFile({
+        type: "asset",
+        fileName: "sitemap.xml",
+        source:
+          '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+          urls.map((u) => "  <url><loc>" + siteUrl + u + "</loc></url>").join("\n") +
+          "\n</urlset>\n",
       });
     },
   };
