@@ -538,3 +538,36 @@ describe("migration 014: site health (owner only, read only)", () => {
     await root();
   });
 });
+
+describe("migration 015: same permissions, faster policies", () => {
+  it("keeps who can read and write profiles, plus and memberships", async () => {
+    await root();
+    await db.exec(file("015_rls_speed.sql"));
+    await db.exec(file("015_rls_speed.sql"));
+    const check = async () => {
+      await as(STUDENT);
+      const plus = await q(`select user_id from guide_plus_entitlements`);
+      expect(plus.every((r) => r.user_id === STUDENT)).toBe(true);
+      const profs = await q(`select user_id from guide_student_profiles`);
+      expect(profs.every((r) => r.user_id === STUDENT)).toBe(true);
+      expect(await fails(`insert into guide_student_profiles(user_id, display_name) values ($1,'طالب ثاني')`, [STUDENT2])).toBe(true);
+      expect(await fails(`insert into guide_student_profiles(user_id, display_name) values ($1,'طالب') on conflict (user_id) do update set display_name = excluded.display_name`, [STUDENT])).toBe(false);
+      const adm = await q(`select user_id from guide_admins`);
+      expect(adm.length).toBe(0);
+      await as(EDITOR);
+      expect((await q(`select user_id from guide_admins`)).every((r) => r.user_id === EDITOR)).toBe(true);
+      expect(await fails(`insert into guide_student_profiles(user_id, display_name) values ($1,'محرر')`, [EDITOR])).toBe(true);
+      await as(OWNER);
+      expect((await q(`select count(*)::int n from guide_admins`))[0].n).toBeGreaterThan(1);
+    };
+    await check();
+    await root();
+    const pol = await q(`select pg_get_expr(polqual, polrelid) e from pg_policy where polname='Guide own plus read'`);
+    expect(pol[0].e).toMatch(/SELECT auth\.uid\(\)/);
+    await db.exec(file("015_rls_speed_rollback.sql"));
+    await check();
+    await root();
+    await db.exec(file("015_rls_speed.sql"));
+    await root();
+  });
+});
