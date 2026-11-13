@@ -13,6 +13,12 @@ export const appUrl = (path: string) => location.origin + BASE + path;
 
 // Optional public contact for privacy/account requests. Leave empty to hide it.
 export const CONTACT_EMAIL = "";
+// Privacy policy (SDAIA guide): who runs the site and their registration
+// (commercial register or freelance document). Empty values are not shown.
+export const ENTITY_NAME = "مُوجّه";
+export const LEGAL_ID = "";
+// Days to answer a data request or complaint.
+export const RESPONSE_DAYS = 30;
 
 // The "preview" bar is retired: who can open the site is now the owner's
 // private/public switch (Admin > Access, database/011).
