@@ -60,7 +60,7 @@ const daysBetween = (from: string, to: string) =>
 
 export function healthChecks(h: Health): Check[] {
   const out: Check[] = [];
-  const upgrade = { label: "افتحي Supabase", to: SUPABASE_PROJECT };
+  const upgrade = { label: "افتح Supabase", to: SUPABASE_PROJECT };
 
   // Usage against the free plan.
   const dbRatio = h.db_bytes / FREE_DB_BYTES;
@@ -73,7 +73,7 @@ export function healthChecks(h: Health): Check[] {
     ratio: dbRatio,
     fix:
       dbRatio >= 0.6
-        ? "قربتِ من الحد. اشتركي في Supabase Pro (25 دولار بالشهر) من Billing، وحدّه 8 جيجا."
+        ? "قربت من الحد. اشترك في Supabase Pro (25 دولار بالشهر) من Billing، وحدّه 8 جيجا."
         : "بعيد عن الحد. ما يحتاج شي الحين.",
     action: dbRatio >= 0.6 ? upgrade : undefined,
   });
@@ -87,7 +87,7 @@ export function healthChecks(h: Health): Check[] {
     ratio: usersRatio,
     fix:
       usersRatio >= 0.6
-        ? "قربتِ من حد الخطة المجانية. اشتركي في Pro قبل نهاية الشهر، وحدّه 100 ألف."
+        ? "قربت من حد الخطة المجانية. اشترك في Pro قبل نهاية الشهر، وحدّه 100 ألف."
         : "بعيد عن الحد.",
     action: usersRatio >= 0.6 ? upgrade : undefined,
   });
@@ -101,11 +101,11 @@ export function healthChecks(h: Health): Check[] {
     value: n(h.views_month) + " زيارة لصفحات الجامعات هالشهر",
     fix:
       viewsLevel === "bad"
-        ? "الزيارات عالية، والتصفح غالبًا قرب من حد 5 جيجا. افتحي Usage في Supabase الحين، ولو فوق 80% اشتركي في Pro اليوم."
+        ? "الزيارات عالية، والتصفح غالبًا قرب من حد 5 جيجا. افتح Usage في Supabase الحين، ولو فوق 80% اشترك في Pro اليوم."
         : viewsLevel === "warn"
-          ? "الزيارات تزيد. افتحي Usage في Supabase وشوفي نسبة Egress، ولو فوق 60% جهّزي الاشتراك."
-          : "الرقم الحقيقي للتصفح ما يوصل للموقع، وتلقينه في Supabase ← Usage ← Egress. راجعيه مرة بالأسبوع بعد الإطلاق.",
-    action: { label: "افتحي Usage في Supabase", to: SUPABASE_PROJECT },
+          ? "الزيارات تزيد. افتح Usage في Supabase وشوف نسبة Egress، ولو فوق 60% جهّز الاشتراك."
+          : "الرقم الحقيقي للتصفح ما يوصل للموقع، وتلقاه في Supabase ← Usage ← Egress. راجعه مرة بالأسبوع بعد الإطلاق.",
+    action: { label: "افتح Usage في Supabase", to: SUPABASE_PROJECT },
   });
 
   // Launch settings.
@@ -121,9 +121,9 @@ export function healthChecks(h: Health): Check[] {
         (left < 0 ? " · انتهى" : " · باقي " + n(left) + " يوم"),
       fix:
         left <= 14
-          ? "حدّثي اسم الموسم وتاريخ نهايته (مثلًا: موسم قبول 1449، ينتهي آخر أغسطس) من صفحة بلس والوصول."
+          ? "حدّث اسم الموسم وتاريخ نهايته (مثلًا: موسم قبول 1449، ينتهي آخر أغسطس) من صفحة بلس والوصول."
           : "التاريخ مضبوط.",
-      action: left <= 14 ? { label: "عدّلي الموسم", to: "/admin/access" } : undefined,
+      action: left <= 14 ? { label: "عدّل الموسم", to: "/admin/access" } : undefined,
     });
   }
   if (h.private !== null)
@@ -134,7 +134,7 @@ export function healthChecks(h: Health): Check[] {
       title: "ظهور الموقع",
       value: h.private ? "خاص: الفريق بس يشوف المحتوى" : "عام: الكل يشوف المحتوى",
       fix: h.private
-        ? "يوم الإطلاق افتحيه للعموم من صفحة بلس والوصول."
+        ? "يوم الإطلاق افتحه للعموم من صفحة بلس والوصول."
         : "الموقع مفتوح للطلاب.",
       action: h.private ? { label: "إعداد الظهور", to: "/admin/access" } : undefined,
     });
@@ -146,9 +146,9 @@ export function healthChecks(h: Health): Check[] {
       title: "رابط الشراء",
       value: h.has_purchase_url ? "موجود" : "الترقية مفعّلة بدون رابط شراء",
       fix: h.has_purchase_url
-        ? "جرّبي شراء حقيقي مرة للتأكد إن الترقية تنفتح تلقائيًا."
-        : "الطلاب يشوفون الترقية وما يقدرون يدفعون. أضيفي رابط منتج زد من صفحة بلس والوصول.",
-      action: h.has_purchase_url ? undefined : { label: "أضيفي الرابط", to: "/admin/access" },
+        ? "جرّب شراء حقيقي مرة للتأكد إن الترقية تنفتح تلقائيًا."
+        : "الطلاب يشوفون الترقية وما يقدرون يدفعون. أضف رابط منتج زد من صفحة بلس والوصول.",
+      action: h.has_purchase_url ? undefined : { label: "أضف الرابط", to: "/admin/access" },
     });
 
   // Data quality.
@@ -160,11 +160,11 @@ export function healthChecks(h: Health): Check[] {
     value: n(h.tracks_published) + " منشور من " + n(h.tracks),
     fix:
       h.tracks_published === 0 && h.tracks > 0
-        ? "حاسبة الموزونة مخفية عن الطلاب لأن ولا مسار منشور. راجعي المسارات وانشريها."
+        ? "حاسبة الموزونة مخفية عن الطلاب لأن ولا مسار منشور. راجع المسارات وانشرها."
         : h.tracks_published < h.tracks
           ? "فيه مسارات ما انتشرت، والحاسبة ما تطلع في جامعاتها."
           : "كل المسارات منشورة.",
-    action: h.tracks_published < h.tracks ? { label: "افتحي المسارات", to: "/admin/tracks" } : undefined,
+    action: h.tracks_published < h.tracks ? { label: "افتح المسارات", to: "/admin/tracks" } : undefined,
   });
   const srcRatio =
     h.programs + h.sections > 0
@@ -181,9 +181,9 @@ export function healthChecks(h: Health): Check[] {
     ratio: srcRatio,
     fix:
       srcRatio < 0.5
-        ? "أغلب المعلومات بدون رابط مصدر، وهذا يضعف ثقة الطالب. خلّي الفريق يضيف رابط دليل القبول لكل جامعة."
+        ? "أغلب المعلومات بدون رابط مصدر، وهذا يضعف ثقة الطالب. خلّ الفريق يضيف رابط دليل القبول لكل جامعة."
         : "أغلب المعلومات موثّقة.",
-    action: srcRatio < 0.5 ? { label: "افتحي جاهزية البيانات", to: "/admin/readiness" } : undefined,
+    action: srcRatio < 0.5 ? { label: "افتح جاهزية البيانات", to: "/admin/readiness" } : undefined,
   });
   out.push({
     id: "cutoffs",
@@ -195,7 +195,7 @@ export function healthChecks(h: Health): Check[] {
       h.cutoffs === 0
         ? "ما فيه نسب منشورة، فميزة النسب السابقة فاضية."
         : "كل ما زادت النسب، زادت قيمة الميزة.",
-    action: { label: "افتحي النسب", to: "/admin/cutoffs" },
+    action: { label: "افتح النسب", to: "/admin/cutoffs" },
   });
   return out;
 }

@@ -30,7 +30,7 @@ export const healthMissing = (e: unknown) =>
   );
 
 const ICON = { ok: CheckCircle2, warn: AlertTriangle, bad: AlertOctagon, info: Info };
-const LEVEL_LABEL = { ok: "تمام", warn: "انتبهي", bad: "يحتاج تصرف", info: "للعلم" };
+const LEVEL_LABEL = { ok: "تمام", warn: "انتبه", bad: "يحتاج تصرف", info: "للعلم" };
 
 function Action({ action }: { action: NonNullable<Check["action"]> }) {
   return action.to.startsWith("/") ? (
@@ -143,7 +143,7 @@ export default function SiteHealth() {
     <div className="site-health">
       <PageHeading
         title="صحة الموقع"
-        description="الاستهلاك والإعدادات والبيانات في مكان واحد. كل تنبيه معه وش تسوين."
+        description="الاستهلاك والإعدادات والبيانات في مكان واحد. كل تنبيه معه وش تسوي."
       />
       <div className={"hc-summary " + (urgent.some((c) => c.level === "bad") ? "bad" : urgent.length ? "warn" : "ok")}>
         {urgent.length ? (
@@ -192,8 +192,8 @@ export default function SiteHealth() {
       <p className="notice hc-tip">
         <Mail size={16} aria-hidden="true" />
         <span>
-          Supabase نفسه يرسل تحذير لإيميل الفوترة لما تقربين من أي حد. تأكدي إن إيميل الفوترة في حسابك إيميل تفتحينه كل يوم،
-          ولو جاك تحذير اشتركي في Pro بنفس اليوم: المهلة بعد التجاوز تجي مرة وحدة بس.
+          Supabase نفسه يرسل تحذير لإيميل الفوترة لما تقرب من أي حد. تأكد إن إيميل الفوترة في حسابك إيميل تفتحه كل يوم،
+          ولو جاك تحذير اشترك في Pro بنفس اليوم: المهلة بعد التجاوز تجي مرة وحدة بس.
         </span>
       </p>
     </div>
