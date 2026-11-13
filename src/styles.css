@@ -2757,3 +2757,30 @@ dialog.upgrade-sheet {
 /* Share the comparison */
 .compare-share { display: flex; justify-content: flex-start; margin: -4px 0 12px; }
 .compare-share .btn { gap: 6px; }
+
+/* Policy pages (privacy): date, contents, numbered sections */
+.prose-page.policy { max-width: 1040px; }
+.policy-head { padding-bottom: 18px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
+.policy-head h1 { font-size: 28px; margin: 0 0 4px; }
+.policy-head .muted { margin: 0 0 12px; font-size: 13px; }
+.policy-intro { margin: 0; font-size: 16px; line-height: 1.9; max-width: 68ch; }
+.policy-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 40px; align-items: start; }
+.policy-toc { position: sticky; top: 88px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.policy-toc h2 { font-size: 13px; color: var(--muted); margin: 0 0 10px; font-weight: 700; }
+.policy-toc ol { margin: 0; padding-inline-start: 18px; display: grid; gap: 8px; font-size: 14px; }
+.policy-toc a { color: var(--text); text-decoration: none; }
+.policy-toc a:hover { color: var(--accent); }
+.policy-body { max-width: 70ch; }
+.policy-section { padding: 0 0 22px; margin: 0 0 22px; border-bottom: 1px solid var(--line); scroll-margin-top: 90px; }
+.policy-section:last-of-type { border-bottom: 0; }
+.policy-section h2 { font-size: 18px; margin: 0 0 10px; }
+.policy-num { color: var(--accent); font-variant-numeric: tabular-nums; }
+.policy-section p, .policy-section li { line-height: 1.95; font-size: 15px; }
+.policy-section p { margin: 0 0 8px; }
+.policy-section ul { padding-inline-start: 20px; display: grid; gap: 6px; margin: 0 0 8px; }
+.policy-back { margin-top: 8px; }
+@media (max-width: 860px) {
+  .policy-layout { grid-template-columns: 1fr; gap: 20px; }
+  .policy-toc { position: static; }
+  .policy-head h1 { font-size: 24px; }
+}
