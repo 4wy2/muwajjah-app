@@ -1,13 +1,18 @@
--- 016: official website links for 25 universities, from the Ministry of
+-- 016: official website links for 26 universities, from the Ministry of
 -- Education directory (moe.gov.sa/ar/contact-and-participation/directories,
 -- checked 13 Nov 2026). Only fills links that are empty today; matches by the
--- exact published name. Kept out on purpose: كلية الجبيل وينبع الصناعية
--- (owner to choose the link). Backup first; rollback restores the old values.
+-- exact published name. كلية الجبيل وينبع الصناعية links to Jubail Industrial
+-- College on the Royal Commission site (owner's choice). Backup first;
+-- rollback restores the old values.
 begin;
 create schema if not exists backup;
 create table if not exists backup.university_websites_016 as
   select id, website_url from public.guide_universities;
 revoke all on backup.university_websites_016 from anon, authenticated;
+
+-- Run as the owner so the write guard and the change log see the owner.
+select set_config('request.jwt.claim.sub',
+  (select user_id::text from public.guide_admins where is_owner and is_enabled limit 1), true);
 
 update public.guide_universities u
    set website_url = v.url
@@ -36,7 +41,8 @@ update public.guide_universities u
   ('جامعة المجمعة', 'https://www.mu.edu.sa'),
   ('جامعة جدة', 'https://www.uj.edu.sa'),
   ('جامعة بيشة', 'https://www.ub.edu.sa'),
-  ('جامعة حفر الباطن', 'https://www.uhb.edu.sa')
+  ('جامعة حفر الباطن', 'https://www.uhb.edu.sa'),
+  ('كلية الجبيل وينبع الصناعية', 'https://rcjy.edu.sa/en/colleges-and-institutes-in-jubail/jubail-industrial-college/home-jic')
   ) as v(name, url)
  where u.name = v.name
    and u.deleted_at is null
