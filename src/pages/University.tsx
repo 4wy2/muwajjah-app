@@ -182,7 +182,7 @@ export function CalculatorForm({
   const [result, setResult] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const savingFeature = useSaving().state;
+  const savingFeature = useSaving("score_saving").state;
   const canSave = !!user && (savingFeature === "free" || savingFeature === "plus");
   const track = weighted.find((t) => t.id === trackId) || weighted[0];
   useEffect(() => {
@@ -314,7 +314,7 @@ export function CalculatorForm({
               <button
                 type="button"
                 className="text-btn inline"
-                onClick={() => useUpgradeSheet.getState().show("saving")}
+                onClick={() => useUpgradeSheet.getState().show("score_saving")}
               >
                 احفظ نتائجك في حسابك
               </button>

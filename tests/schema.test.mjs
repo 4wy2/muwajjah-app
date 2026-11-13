@@ -448,6 +448,7 @@ describe("migration 012: saving as an owner-controlled feature", () => {
     await root();
     await db.exec(`update guide_universities set published=true, deleted_at=null where id='${U}'`);
     await db.exec(`update guide_site_settings set private=false`);
+    await db.exec(`update guide_tracks set published=true, deleted_at=null where id='${Tw}'`);
     await db.exec(file("012_saving_feature.sql"));
     await db.exec(file("012_saving_feature.sql"));
     const save = () => fails(`insert into guide_student_favorites(user_id, university_id) values ($1, $2)`, [STUDENT, U]);
@@ -474,7 +475,7 @@ describe("migration 012: saving as an owner-controlled feature", () => {
     await q(`select guide_owner_set_feature('saving','hidden',false)`);
     await as(STUDENT);
     expect(await save()).toBe(true);
-    expect(await fails(`insert into guide_student_scores(user_id, university_id, school, aptitude, achievement, result) values ($1,$2,90,90,90,90)`, [STUDENT, U])).toBe(true);
+    expect(await fails(`insert into guide_student_scores(user_id,university_id,track_id,school,aptitude,achievement,result) values($1,$2,$3,90,80,85,85)`, [STUDENT, U, Tw])).toBe(true);
     await root();
     await db.exec(file("012_saving_feature_rollback.sql"));
     await as(STUDENT);
@@ -569,5 +570,46 @@ describe("migration 015: same permissions, faster policies", () => {
     await root();
     await db.exec(file("015_rls_speed.sql"));
     await root();
+  });
+});
+
+describe("migration 017: score saving apart from favorites", () => {
+  it("lets the owner gate saved scores separately and rolls back", async () => {
+    await root();
+    await db.exec(`update guide_site_settings set private=false`);
+    await db.exec(`update guide_universities set published=true, deleted_at=null where id='${U}'`);
+    await db.exec(file("012_saving_feature.sql"));
+    await db.exec(file("013_filters_share.sql"));
+    await db.exec(file("017_score_saving.sql"));
+    await db.exec(file("017_score_saving.sql"));
+    await db.exec(`update guide_tracks set published=true, deleted_at=null where id='${Tw}'`);
+    expect((await q(`select access_mode from guide_feature_flags where feature_key='score_saving'`))[0].access_mode).toBe(
+      (await q(`select access_mode from guide_feature_flags where feature_key='saving'`))[0].access_mode,
+    );
+    const score = () => fails(`insert into guide_student_scores(user_id,university_id,track_id,school,aptitude,achievement,result) values($1,$2,$3,90,80,85,85)`, [STUDENT, U, Tw]);
+    const fav = () => fails(`insert into guide_student_favorites(user_id, university_id) values ($1,$2)`, [STUDENT, U]);
+    const clear = async () => { await root(); await db.exec(`delete from guide_student_favorites where user_id='${STUDENT}'; delete from guide_student_scores where user_id='${STUDENT}'`); };
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('saving','members',false)`);
+    await q(`select guide_owner_set_feature('score_saving','hidden',false)`);
+    await as(STUDENT);
+    expect(await fav()).toBe(false); // favorites still open
+    expect(await score()).toBe(true); // scores closed on their own
+    await clear();
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('saving','hidden',false)`);
+    await q(`select guide_owner_set_feature('score_saving','members',false)`);
+    await as(STUDENT);
+    expect(await fav()).toBe(true);
+    expect(await score()).toBe(false);
+    await clear();
+    await db.exec(file("017_score_saving_rollback.sql"));
+    expect((await q(`select count(*)::int n from guide_feature_flags where feature_key='score_saving'`))[0].n).toBe(0);
+    await as(OWNER);
+    await q(`select guide_owner_set_feature('saving','members',false)`);
+    await as(STUDENT);
+    expect(await score()).toBe(false);
+    await clear();
+    await db.exec(`update guide_site_settings set private=true`);
   });
 });

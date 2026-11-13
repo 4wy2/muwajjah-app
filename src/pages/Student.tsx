@@ -22,6 +22,7 @@ import {
   usePlusFeatures,
   useCommercialVisible,
   useSaving,
+  type SavingKey,
   deleteScore,
 } from "../api/student";
 import { useCatalog } from "../api/catalog";
@@ -42,6 +43,7 @@ import { date, friendly } from "../lib/utils";
 export default function Student() {
   const commercial = useCommercialVisible();
   const saving = useSaving().state;
+  const scoreSaving = useSaving("score_saving").state;
   useActiveNavIntoView(useLocation().pathname);
   return (
     <div className="workspace">
@@ -59,7 +61,8 @@ export default function Student() {
             .filter(([route]) => route !== "subscription" || commercial)
             .filter(
               ([route]) =>
-                saving !== "hidden" || (route !== "favorites" && route !== "scores"),
+                (route !== "favorites" || saving !== "hidden") &&
+                (route !== "scores" || scoreSaving !== "hidden"),
             )
             .map(([route, label, Icon]) => {
             const I = Icon as typeof Star;
@@ -86,6 +89,7 @@ export function Dashboard() {
   const plus = usePlus();
   const commercial = useCommercialVisible();
   const saving = useSaving().state;
+  const scoreSaving = useSaving("score_saving").state;
   return (
     <>
       <PageHeading
@@ -100,12 +104,13 @@ export function Dashboard() {
       />
       <div className="stat-grid">
         {saving !== "hidden" && (
-        <>
         <Link to="/student/favorites" className="stat-card">
           <Star />
           <span>خياراتك المفضلة</span>
           <strong>{favorites.data?.length ?? "—"}</strong>
         </Link>
+        )}
+        {scoreSaving !== "hidden" && (
         <Link to="/student/scores" className="stat-card">
           <Calculator />
           <span>آخر موزونة محفوظة</span>
@@ -113,7 +118,6 @@ export function Dashboard() {
             {scores.data?.[0] ? scores.data[0].result + "%" : "—"}
           </strong>
         </Link>
-        </>
         )}
         {commercial && (
           <Link to="/student/subscription" className="stat-card purple">
@@ -142,14 +146,14 @@ export function Dashboard() {
   );
 }
 // Opening a hidden section by its address goes back to the dashboard.
-function SavingGate({ children }: { children: React.ReactNode }) {
-  const s = useSaving();
+function SavingGate({ feature, children }: { feature: SavingKey; children: React.ReactNode }) {
+  const s = useSaving(feature);
   if (s.ready && s.state === "hidden") return <Navigate to="/student" replace />;
   return <>{children}</>;
 }
 export function Favorites() {
   return (
-    <SavingGate>
+    <SavingGate feature="saving">
       <FavoritesView />
     </SavingGate>
   );
@@ -254,7 +258,7 @@ function FavoritesView() {
 }
 export function Scores() {
   return (
-    <SavingGate>
+    <SavingGate feature="score_saving">
       <ScoresView />
     </SavingGate>
   );

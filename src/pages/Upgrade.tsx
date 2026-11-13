@@ -10,6 +10,7 @@ import {
   Bookmark,
   SlidersHorizontal,
   Share2,
+  Calculator,
   X,
   ArrowLeft,
   type LucideIcon,
@@ -56,10 +57,17 @@ export const BENEFITS: Record<
   },
   saving: {
     icon: Bookmark,
-    title: "احفظ مفضلتك ونتائجك",
-    text: "احفظ الجامعات والتخصصات اللي تعجبك ونتائج الموزونة، وارجع لها من أي جهاز.",
+    title: "احفظ مفضلتك",
+    text: "احفظ الجامعات والتخصصات اللي تعجبك، وارجع لها من أي جهاز.",
     to: "/student/favorites",
     cta: "افتح مفضلتك",
+  },
+  score_saving: {
+    icon: Calculator,
+    title: "احفظ نتائج الموزونة",
+    text: "كل نسبة موزونة تحسبها تنحفظ في سجلك، وتقارن نتائجك بين الجامعات متى ما تبي.",
+    to: "/student/scores",
+    cta: "افتح سجلك",
   },
   filters: {
     icon: SlidersHorizontal,
@@ -84,7 +92,8 @@ const VERBS: Record<string, string> = {
   program_search: "ابحث بالتخصص",
   comparison: "قارن",
   historical_cutoffs: "شوف نسب القبول",
-  saving: "احفظ اختياراتك",
+  saving: "احفظ مفضلتك",
+  score_saving: "احفظ نتائجك",
   filters: "فلتر بالمنطقة والسكن",
   compare_share: "شارك مقارنتك",
 };
@@ -92,7 +101,8 @@ const FREE_NAMES: Record<string, string> = {
   program_search: "البحث بالتخصص",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
-  saving: "حفظ المفضلة ونتائج الموزونة",
+  saving: "حفظ المفضلة",
+  score_saving: "حفظ نتائج الموزونة",
   filters: "فلترة الجامعات",
   compare_share: "مشاركة المقارنة",
 };

@@ -18,17 +18,19 @@ describe("upgrade page lists follow the settings", () => {
   it("headline names only the upgrade features", () => {
     expect(headline(["comparison"])).toBe("قرّر بثقة: قارن");
     expect(headline(["program_search", "comparison", "saving"])).toBe(
-      "قرّر بثقة: ابحث بالتخصص، قارن، واحفظ اختياراتك",
+      "قرّر بثقة: ابحث بالتخصص، قارن، واحفظ مفضلتك",
     );
     expect(headline([])).toBe("أدوات تساعدك وقت القرار");
   });
   it("free answer adds features the owner made free, and only those", () => {
     const a = freeAnswer({ saving: "login", comparison: "locked", program_search: "free" });
-    expect(a).toContain("حفظ المفضلة ونتائج الموزونة");
+    expect(a).toContain("حفظ المفضلة");
+    expect(a).not.toContain("حفظ نتائج الموزونة");
     expect(a).toContain("البحث بالتخصص");
     expect(a).not.toContain("مقارنة");
     expect(a).toContain("تسجيل دخول");
     expect(freeAnswer({ saving: "plus" })).not.toContain("المفضلة");
+    expect(freeAnswer({ saving: "plus", score_saving: "free" })).toContain("حفظ نتائج الموزونة");
   });
 });
 

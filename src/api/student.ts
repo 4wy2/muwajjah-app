@@ -149,7 +149,8 @@ const PLUS_LABELS: Record<string, string> = {
   program_search: "البحث بالتخصص في كل الجامعات",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
-  saving: "حفظ المفضلة ونتائج الموزونة",
+  saving: "حفظ المفضلة",
+  score_saving: "حفظ نتائج الموزونة",
   filters: "فلترة الجامعات بالمنطقة والسكن",
   compare_share: "مشاركة المقارنة برابط",
 };
@@ -162,11 +163,13 @@ export function savingState(raw: string | null | undefined, signedIn: boolean): 
     return raw;
   return signedIn ? "free" : "login";
 }
-export function useSaving(): { state: SavingState; ready: boolean } {
+// "saving" = favorites, "score_saving" = weighted-score results (database/017).
+export type SavingKey = "saving" | "score_saving";
+export function useSaving(key: SavingKey = "saving"): { state: SavingState; ready: boolean } {
   const { user } = useAuth();
   const f = useQuery({
-    queryKey: ["feature", "saving", user?.id || "guest"],
-    queryFn: () => rpc<string | null>("guide_feature_state", { target_feature: "saving" }),
+    queryKey: ["feature", key, user?.id || "guest"],
+    queryFn: () => rpc<string | null>("guide_feature_state", { target_feature: key }),
     staleTime: 60_000,
   });
   return { state: savingState(f.data, !!user), ready: !f.isPending };
@@ -182,7 +185,7 @@ export function useFeatureStates(): Record<string, string | null> | undefined {
   if (!states.data) return undefined;
   const out: Record<string, string | null> = {};
   Object.keys(PLUS_LABELS).forEach((k, i) => {
-    out[k] = k === "saving" ? savingState(states.data[i], !!user) : states.data[i];
+    out[k] = k === "saving" || k === "score_saving" ? savingState(states.data[i], !!user) : states.data[i];
   });
   return out;
 }

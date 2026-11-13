@@ -29,7 +29,8 @@ const FEATURE_NAMES: Record<string, string> = {
   comparison: "مقارنة الجامعات",
   compare_share: "مشاركة المقارنة برابط",
   filters: "فلاتر المنطقة والسكن",
-  saving: "حفظ المفضلة ونتائج الموزونة",
+  saving: "حفظ المفضلة",
+  score_saving: "حفظ نتائج الموزونة",
   historical_cutoffs: "النسب السابقة",
 };
 export default function Access() {
