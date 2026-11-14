@@ -400,21 +400,19 @@ function TrackItem({
 // A track published before its source and check date were filled in.
 const unverified = (t: Track) => !String(t.source_url || "").trim() || !t.verified_on;
 function UnverifiedNote({ website }: { website?: string }) {
+  // Calm, factual reminder: weights come from the admission guides and can
+  // change from year to year. No alarm box, no "not reviewed" wording.
   return (
-    <p className="notice caution small" role="note">
-      هذي الأوزان منقولة من أدلة القبول وما راجعناها على دليل هذي السنة للحين. تأكد منها
+    <p className="muted small weights-note">
+      الأوزان من أدلة القبول، والجامعات ممكن تحدّثها كل سنة. تقدر تتأكد من آخر تحديث في{" "}
       {website ? (
-        <>
-          {" "}
-          في{" "}
-          <a href={website} target="_blank" rel="noopener noreferrer">
-            موقع الجامعة
-          </a>
-        </>
+        <a href={website} target="_blank" rel="noopener noreferrer">
+          موقع الجامعة
+        </a>
       ) : (
-        " من موقع الجامعة"
-      )}{" "}
-      قبل ما تعتمد عليها.
+        "موقع الجامعة"
+      )}
+      .
     </p>
   );
 }
