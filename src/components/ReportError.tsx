@@ -16,8 +16,9 @@ const PARTS = [
   ["links", "الروابط"],
 ] as const;
 
-// "Spotted something wrong?" under a university page. Shown only once the
-// reports table exists (migration 019), so an older database shows nothing.
+// "Spotted something wrong?" under a university page. Visitors who are not
+// signed in see it too (the dialog asks them to sign in); for signed-in users
+// it shows once the reports table exists (migration 019).
 export function ReportError({ universityId, name }: { universityId: string; name: string }) {
   const { user } = useAuth();
   const location = useLocation();
@@ -27,13 +28,14 @@ export function ReportError({ universityId, name }: { universityId: string; name
   const [error, setError] = useState("");
   const ready = useQuery({
     queryKey: ["error-reports-ready"],
+    enabled: !!user,
     staleTime: Infinity,
     queryFn: async () => {
       const { error } = await db.from("guide_error_reports").select("id", { head: true, count: "exact" }).limit(0);
       return !error;
     },
   });
-  if (!ready.data) return null;
+  if (user && !ready.data) return null;
   return (
     <div className="report-error">
       <button
