@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { db } from "../api/client";
-import { useMember } from "../auth/AuthProvider";
+import { db, rpc } from "../api/client";
+import { useAuth, useMember } from "../auth/AuthProvider";
 import { PageHeading, Loading, ErrorState, Empty } from "../components/ui";
 import { specs } from "./specs";
 import type { ContentKind } from "../lib/types";
@@ -61,8 +61,24 @@ export default function Audit() {
   const [table, setTable] = useState("");
   const [actor, setActor] = useState("");
   const [page, setPage] = useState(0);
+  const { user } = useAuth();
+  // Names of the people who edit: the team directory, plus the owner's own name.
+  const people = useQuery({
+    queryKey: ["audit-names"],
+    enabled: member.is_owner,
+    queryFn: async () => {
+      const names = new Map<string, string>();
+      const team = await rpc<{ email: string; display_name: string }[]>("guide_team_directory").catch(() => []);
+      for (const t of team || []) if (t.email) names.set(t.email.toLowerCase(), t.display_name || t.email);
+      const me = user?.user_metadata as { guide_name?: string; full_name?: string; name?: string } | undefined;
+      const myName = (me?.guide_name || me?.full_name || me?.name || "").trim();
+      if (user?.email) names.set(user.email.toLowerCase(), myName ? myName + " (أنت)" : "أنت");
+      return names;
+    },
+  });
+  const who = (email: string | null) => (email ? people.data?.get(email.toLowerCase()) || email : "النظام");
   const q = useQuery({
-    queryKey: ["audit", table, actor, page],
+    queryKey: ["audit", table, actor, page, people.isSuccess],
     enabled: member.is_owner,
     queryFn: async () => {
       let r = db
@@ -72,7 +88,15 @@ export default function Audit() {
         .order("id", { ascending: false })
         .range(page * PAGE, page * PAGE + PAGE - 1);
       if (table) r = r.eq("table_name", table);
-      if (actor.trim()) r = r.ilike("actor_email", "%" + actor.trim() + "%");
+      const text = actor.trim();
+      if (text) {
+        // Match the typed text against names too, not only emails.
+        const byName = [...(people.data || [])]
+          .filter(([, n]) => n.includes(text))
+          .map(([e]) => '"' + e.replace(/"/g, "") + '"');
+        const like = "actor_email.ilike.*" + text.replace(/[,()*]/g, "") + "*";
+        r = byName.length ? r.or(like + ",actor_email.in.(" + byName.join(",") + ")") : r.ilike("actor_email", "%" + text + "%");
+      }
       const { data, error, count } = await r;
       if (error) throw error;
       return { rows: (data || []) as Entry[], count: count || 0 };
@@ -103,9 +127,10 @@ export default function Audit() {
             ))}
           </select>
           <input
-            aria-label="بريد المعدِّل"
-            placeholder="بريد المعدِّل"
-            dir="ltr"
+            aria-label="اسم المعدِّل أو بريده"
+            placeholder="اسم المعدِّل أو بريده"
+            autoComplete="off"
+            spellCheck={false}
             value={actor}
             onChange={(e) => {
               setActor(e.target.value);
@@ -134,7 +159,7 @@ export default function Audit() {
                         {label(e.table_name)}: {nameOf(e)}
                       </span>
                       <small className="muted">
-                        <span dir="ltr">{e.actor_email || "النظام"}</span> ·{" "}
+                        <bdi title={e.actor_email || undefined}>{who(e.actor_email)}</bdi> ·{" "}
                         {new Intl.DateTimeFormat("ar-SA-u-nu-latn", {
                           dateStyle: "medium",
                           timeStyle: "short",
