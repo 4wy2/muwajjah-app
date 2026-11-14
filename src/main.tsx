@@ -1,3 +1,4 @@
+import { uniPath } from "./lib/slugs";
 import NoIndex from "./components/NoIndex";
 import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
@@ -46,7 +47,7 @@ function LegacyDetail() {
   const id = new URLSearchParams(loc.search).get("id");
   return (
     <Navigate
-      to={id ? "/universities/" + encodeURIComponent(id) : "/"}
+      to={id ? uniPath(id) : "/"}
       replace
     />
   );
@@ -92,6 +93,8 @@ function App() {
                   <Route element={<Layout />}>
                     <Route index element={<Home />} />
                     <Route path="universities/:id" element={<University />} />
+                    <Route path="programs/:id" element={<University topic="programs" />} />
+                    <Route path="admission/:id" element={<University topic="admission" />} />
                     <Route path="compare" element={<Compare />} />
                     <Route path="upgrade" element={<Upgrade />} />
                     <Route path="privacy" element={<Privacy />} />

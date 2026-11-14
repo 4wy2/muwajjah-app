@@ -1,3 +1,4 @@
+import { uniPath } from "../lib/slugs";
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowRight, Eye, Rocket } from "lucide-react";
@@ -80,11 +81,11 @@ export default function UniversityWorkspace() {
         </div>
         <div className="actions">
           {uni.published && !uni.deleted_at ? (
-            <a className="btn secondary compact" href={BASE + "/universities/" + id} target="_blank" rel="noreferrer">
+            <a className="btn secondary compact" href={BASE + uniPath(id)} target="_blank" rel="noreferrer">
               <Eye size={16} /> كما يراها الطالب
             </a>
           ) : (
-            <a className="btn secondary compact" href={BASE + "/universities/" + id + "?preview=1"} target="_blank" rel="noreferrer">
+            <a className="btn secondary compact" href={BASE + uniPath(id) + "?preview=1"} target="_blank" rel="noreferrer">
               <Eye size={16} /> معاينة قبل النشر
             </a>
           )}

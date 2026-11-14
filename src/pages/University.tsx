@@ -1,8 +1,9 @@
+import { idFromParam, uniPath, type Topic } from "../lib/slugs";
 import NoIndex from "../components/NoIndex";
 import { usePreferences } from "../lib/store";
 import { useUpgradeSheet } from "../lib/store";
 import { track } from "../lib/analytics";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { isValidElement, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   MapPin,
@@ -612,6 +613,12 @@ function ShareButton({ name }: { name: string }) {
     </button>
   );
 }
+// The search question each topic page answers.
+function topicTitle(topic: Topic | undefined, name: string) {
+  if (topic === "programs") return "تخصصات " + name + " للطلاب والطالبات";
+  if (topic === "admission") return "النسبة الموزونة وشروط القبول في " + name;
+  return name;
+}
 function setDescription(text: string) {
   const el = document.querySelector('meta[name="description"]');
   if (el) el.setAttribute("content", text);
@@ -619,8 +626,9 @@ function setDescription(text: string) {
 const DEFAULT_DESCRIPTION =
   "دليل الجامعات الحكومية في السعودية: شروط القبول، التخصصات، والسكن الجامعي لكل جامعة في صفحة واحدة.";
 
-export default function University() {
-  const { id = "" } = useParams();
+export default function University({ topic }: { topic?: Topic } = {}) {
+  const { id: param = "" } = useParams();
+  const id = idFromParam(param);
   const [search] = useSearchParams();
   const member = useMember();
   // Team-only preview; for visitors the parameter is ignored.
@@ -636,9 +644,13 @@ export default function University() {
     (cutoffFeature.data === "free" || cutoffFeature.data === "plus");
   useEffect(() => {
     if (u.data) {
-      document.title = u.data.name + " | مُوجّه";
+      document.title = topicTitle(topic, u.data.name) + " | مُوجّه";
       setDescription(
-        (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
+        topic === "programs"
+          ? "تخصصات " + u.data.name + " مقسمة على الكليات، مع الدرجة (بكالوريوس أو دبلوم) والتخصصات الخاصة بالطلاب أو الطالبات."
+          : topic === "admission"
+            ? "أوزان الثانوية والقدرات والتحصيلي لكل مسار قبول في " + u.data.name + "، وشروط القبول."
+            : (u.data.description?.trim() || u.data.name + ": التخصصات وشروط القبول والسكن.").slice(0, 160),
       );
       if (!preview) {
         usePreferences.getState().addRecent(id);
@@ -650,7 +662,7 @@ export default function University() {
       document.title = "مُوجّه | دليلك للجامعة";
       setDescription(DEFAULT_DESCRIPTION);
     };
-  }, [id, u.data]);
+  }, [id, u.data, topic]);
   // Links such as ?tab=admission (from the comparison page) open at that section.
   const [params] = useSearchParams();
   const target = params.get("tab");
@@ -765,6 +777,8 @@ export default function University() {
       if (b) blocks.push(b);
     }
   }
+  // A topic page shows only its own block, with a link to the full page.
+  const shownBlocks = topic ? blocks.filter((b) => isValidElement(b) && b.key === topic) : blocks;
   const loadingContent = programs.isPending || tracks.isPending || sections.isPending;
   const glance = (
     [
@@ -782,13 +796,13 @@ export default function University() {
       <nav className="breadcrumbs" aria-label="مسار التنقل">
         <Link to="/">دليل الجامعات</Link>
         <span aria-hidden="true">/</span>
-        <span>{uni.name}</span>
+        {topic ? <Link to={uniPath(id)}>{uni.name}</Link> : <span>{uni.name}</span>}
       </nav>
       <div className="profile-hero">
       <header className="profile-header">
         <UniversityLogo university={uni} />
         <div className="profile-id">
-          <h1>{uni.name}</h1>
+          <h1>{topic ? topicTitle(topic, uni.name) : uni.name}</h1>
           <p className="profile-meta">
             {uni.type && <span className="badge">{uni.type}</span>}
             {(uni.city || uni.region) && (
@@ -838,9 +852,16 @@ export default function University() {
           }}
         />
       )}
-      {blocks}
+      {shownBlocks}
+      {topic && (
+        <p>
+          <Link className="btn secondary" to={uniPath(id)}>
+            كل معلومات {uni.name}
+          </Link>
+        </p>
+      )}
       {loadingContent && <Loading />}
-      {!loadingContent && !contentError && blocks.length === 1 && (
+      {!loadingContent && !contentError && !topic && blocks.length === 1 && (
         <p className="muted">لم تُنشر تفاصيل هذه الجامعة بعد.</p>
       )}
       <ReportError universityId={id} name={uni.name} />

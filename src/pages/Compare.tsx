@@ -1,3 +1,4 @@
+import { uniPath } from "../lib/slugs";
 import { useUpgradeSheet } from "../lib/store";
 import { useEffect, useRef } from "react";
 import { track } from "../lib/analytics";
@@ -171,7 +172,7 @@ export default function Compare() {
                         <X size={16} />
                       </button>
                       <UniversityLogo university={u} />
-                      <Link to={"/universities/" + u.id}>{u.name}</Link>
+                      <Link to={uniPath(u.id)}>{u.name}</Link>
                     </th>
                   ))}
                 </tr>
@@ -189,11 +190,11 @@ export default function Compare() {
                   <th>القبول والتخصصات</th>
                   {selected.map((u) => (
                     <td key={u.id}>
-                      <Link to={"/universities/" + u.id + "?tab=admission"}>
+                      <Link to={uniPath(u.id) + "?tab=admission"}>
                         عرض مسارات القبول
                       </Link>
                       <br />
-                      <Link to={"/universities/" + u.id + "?tab=programs"}>
+                      <Link to={uniPath(u.id) + "?tab=programs"}>
                         عرض التخصصات
                       </Link>
                     </td>

@@ -1,3 +1,4 @@
+import { uniPath } from "../lib/slugs";
 import { memo, useEffect, useState } from "react";
 import { localLogo } from "../lib/logos";
 import { Link, useNavigate, useLocation } from "react-router-dom";
@@ -121,7 +122,7 @@ const UniversityCard = memo(function UniversityCard({
         <UniversityLogo university={u} />
         <FavoriteButton kind="university" id={u.id} label={u.name} />
       </div>
-      <Link className="card-title stretched" to={"/universities/" + u.id}>
+      <Link className="card-title stretched" to={uniPath(u.id)}>
         <h3>{u.name}</h3>
       </Link>
       {where && (

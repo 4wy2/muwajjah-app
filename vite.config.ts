@@ -37,16 +37,34 @@ const HOUSING: Record<string, string> = {
   limited: "يوجد سكن بشروط",
   unavailable: "لا يوجد سكن",
 };
+// Readable addresses, read from the app's own list (src/lib/slugs.ts).
+const SLUGS: Record<string, string> = Object.fromEntries(
+  [...readFileSync("src/lib/slugs.ts", "utf8").matchAll(/"([0-9a-f-]{36})":\s*"([a-z0-9-]+)"/g)].map((m) => [m[1], m[2]]),
+);
+const slugOf = (id: string) => SLUGS[id] || id;
+type Topic = "programs" | "admission";
+const usableTracks = (u: Uni) => (u.tracks || []).filter((t) => Number(t.s) + Number(t.a) + Number(t.c) === 100);
+const admissionSections = (u: Uni) =>
+  (u.sections || []).filter((x) => x.x && /قبول|موزونة|التنافسية/.test(x.t));
 // The university's content as simple HTML: what a search engine reads before
 // the app loads, and what a visitor sees for a moment on a slow phone.
-function staticPage(u: Uni, site: string): string {
+function staticPage(u: Uni, site: string, id: string, topic?: Topic): string {
   const parts: string[] = [];
-  parts.push('<main class="seo-static"><nav><a href="' + site + '">دليل الجامعات</a></nav>');
-  parts.push("<h1>" + esc(u.name) + "</h1>");
+  const full = site + "universities/" + slugOf(id);
+  parts.push('<main class="seo-static"><nav><a href="' + site + '">دليل الجامعات</a>' + (topic ? ' / <a href="' + full + '">' + esc(u.name) + "</a>" : "") + "</nav>");
+  parts.push(
+    "<h1>" +
+      esc(topic === "programs" ? "تخصصات " + u.name + " للطلاب والطالبات" : topic === "admission" ? "النسبة الموزونة وشروط القبول في " + u.name : u.name) +
+      "</h1>",
+  );
+  const want = (k: "about" | "tracks" | "programs" | "housing" | "sections" | "admissionText") =>
+    !topic ||
+    (topic === "programs" && k === "programs") ||
+    (topic === "admission" && (k === "tracks" || k === "admissionText"));
   if (u.city || u.region) parts.push("<p>" + esc([u.city, u.region].filter(Boolean).join("، ")) + "</p>");
-  if (u.about) parts.push("<p>" + plain(u.about) + "</p>");
-  const tracks = (u.tracks || []).filter((t) => Number(t.s) + Number(t.a) + Number(t.c) === 100);
-  if (tracks.length) {
+  if (want("about") && u.about) parts.push("<p>" + plain(u.about) + "</p>");
+  const tracks = usableTracks(u);
+  if (want("tracks") && tracks.length) {
     parts.push("<h2>النسبة الموزونة</h2><ul>");
     for (const t of tracks) {
       const w = [
@@ -59,7 +77,7 @@ function staticPage(u: Uni, site: string): string {
     parts.push("</ul>");
   }
   const programs = u.programs || [];
-  if (programs.length) {
+  if (want("programs") && programs.length) {
     parts.push("<h2>التخصصات</h2>");
     const byCollege = new Map<string, typeof programs>();
     for (const p of programs) {
@@ -76,11 +94,20 @@ function staticPage(u: Uni, site: string): string {
       parts.push("</ul>");
     }
   }
-  if (u.housing && HOUSING[u.housing]) parts.push("<h2>السكن الجامعي</h2><p>" + HOUSING[u.housing] + "</p>");
-  for (const sec of u.sections || []) {
+  if (topic === "admission")
+    for (const sec of admissionSections(u)) parts.push("<h2>" + esc(sec.t) + "</h2><p>" + plain(sec.x) + "</p>");
+  if (want("housing") && u.housing && HOUSING[u.housing]) parts.push("<h2>السكن الجامعي</h2><p>" + HOUSING[u.housing] + "</p>");
+  for (const sec of want("sections") ? u.sections || [] : []) {
     if (!sec.x) continue;
     parts.push("<h2>" + esc(sec.t) + "</h2><p>" + plain(sec.x) + "</p>");
   }
+  if (!topic) {
+    const more: string[] = [];
+    if (programs.length) more.push('<li><a href="' + site + "programs/" + slugOf(id) + '">تخصصات ' + esc(u.name) + "</a></li>");
+    if (tracks.length || admissionSections(u).length)
+      more.push('<li><a href="' + site + "admission/" + slugOf(id) + '">النسبة الموزونة وشروط القبول في ' + esc(u.name) + "</a></li>");
+    if (more.length) parts.push("<h2>صفحات أخرى</h2><ul>" + more.join("") + "</ul>");
+  } else parts.push('<p><a href="' + full + '">كل معلومات ' + esc(u.name) + "</a></p>");
   parts.push("</main>");
   return parts.join("");
 }
@@ -103,9 +130,14 @@ function launchSwitch(): Plugin {
       if (!launch) return;
       // Published universities (refresh scripts/sitemap-universities.json when
       // a university is added or removed).
-      const ids = Object.keys(JSON.parse(readFileSync("scripts/university-content.json", "utf8")));
+      const all: Record<string, Uni> = JSON.parse(readFileSync("scripts/university-content.json", "utf8"));
       const today = new Date().toISOString().slice(0, 10);
-      const urls = ["", "privacy", "terms", ...ids.map((id) => "universities/" + id)];
+      const urls = ["", "privacy", "terms"];
+      for (const [id, u] of Object.entries(all)) {
+        urls.push("universities/" + slugOf(id));
+        if ((u.programs || []).length) urls.push("programs/" + slugOf(id));
+        if (usableTracks(u).length || admissionSections(u).length) urls.push("admission/" + slugOf(id));
+      }
       this.emitFile({
         type: "asset",
         fileName: "sitemap.xml",
@@ -133,18 +165,27 @@ function launchSwitch(): Plugin {
       );
       const pub = process.env.PUBLIC !== "0";
       mkdirSync(join(out, "universities"), { recursive: true });
-      for (const [id, u] of Object.entries(data)) {
-        const url = siteUrl + "universities/" + id;
-        const title = u.name + ": التخصصات والنسبة الموزونة وشروط القبول | مُوجّه";
+      const page = (id: string, u: Uni, topic?: Topic) => {
+        const path = (topic ? topic + "/" : "universities/") + slugOf(id);
+        const url = siteUrl + path;
         const n = (u.programs || []).length;
+        const title =
+          topic === "programs"
+            ? "تخصصات " + u.name + " للطلاب والطالبات | مُوجّه"
+            : topic === "admission"
+              ? "النسبة الموزونة وشروط القبول في " + u.name + " | مُوجّه"
+              : u.name + ": التخصصات والنسبة الموزونة وشروط القبول | مُوجّه";
         const desc =
-          "تخصصات " + u.name + (n ? " (" + n + " تخصص)" : "") +
-          "، النسبة الموزونة لكل مسار، شروط القبول والسكن" + (u.city ? " في " + u.city : "") + ".";
+          topic === "programs"
+            ? n + " تخصص في " + u.name + " مقسمة على الكليات، مع الدرجة (بكالوريوس أو دبلوم) والتخصصات الخاصة بالطلاب أو الطالبات."
+            : topic === "admission"
+              ? "أوزان الثانوية والقدرات والتحصيلي لكل مسار قبول في " + u.name + "، وشروط القبول."
+              : "تخصصات " + u.name + (n ? " (" + n + " تخصص)" : "") + "، النسبة الموزونة لكل مسار، شروط القبول والسكن" + (u.city ? " في " + u.city : "") + ".";
         const ld = {
           "@context": "https://schema.org",
           "@type": "CollegeOrUniversity",
           name: u.name,
-          url,
+          url: siteUrl + "universities/" + slugOf(id),
           ...(u.website ? { sameAs: [u.website] } : {}),
           ...(logos.has(id) ? { logo: siteUrl + "logos/" + id + ".png" } : {}),
           address: { "@type": "PostalAddress", addressLocality: u.city || undefined, addressRegion: u.region || undefined, addressCountry: "SA" },
@@ -160,14 +201,26 @@ function launchSwitch(): Plugin {
               '\n    <link rel="canonical" href="' + url + '" />' +
               '\n    <script type="application/ld+json">' + JSON.stringify(ld).replace(/</g, "\\u003c") + "</script>",
           );
-        if (pub) html = html.replace('<div id="root"></div>', '<div id="root">' + staticPage(u, siteUrl) + "</div>");
-        writeFileSync(join(out, "universities", id + ".html"), html);
+        if (pub) html = html.replace('<div id="root"></div>', '<div id="root">' + staticPage(u, siteUrl, id, topic) + "</div>");
+        mkdirSync(join(out, topic || "universities"), { recursive: true });
+        writeFileSync(join(out, path + ".html"), html);
+      };
+      const redirects: string[] = [];
+      for (const [id, u] of Object.entries(data)) {
+        page(id, u);
+        if ((u.programs || []).length) page(id, u, "programs");
+        if (usableTracks(u).length || admissionSections(u).length) page(id, u, "admission");
+        // Old id addresses move to the readable one.
+        if (SLUGS[id]) redirects.push("/universities/" + id + "  /universities/" + SLUGS[id] + "  301");
       }
+      // Redirects go before the app's catch-all rule.
+      const rp = join(out, "_redirects");
+      if (existsSync(rp)) writeFileSync(rp, redirects.join("\n") + "\n" + readFileSync(rp, "utf8"));
       // The home page lists every university as plain links, so a crawler
       // finds them without running the app (PUBLIC=0 leaves them out).
       if (pub) {
         const list = Object.entries(data)
-          .map(([id, u]) => '<li><a href="' + siteUrl + "universities/" + id + '">' + esc(u.name) + "</a>" + (u.city ? " — " + esc(u.city) : "") + "</li>")
+          .map(([id, u]) => '<li><a href="' + siteUrl + "universities/" + slugOf(id) + '">' + esc(u.name) + "</a>" + (u.city ? " — " + esc(u.city) : "") + "</li>")
           .join("");
         writeFileSync(
           join(out, "index.html"),

@@ -1,3 +1,4 @@
+import { uniPath } from "../lib/slugs";
 import { GOOGLE_ONLY } from "../lib/config";
 import { track } from "../lib/analytics";
 import { useOffer } from "../api/commerce";
@@ -223,7 +224,7 @@ function FavoritesView() {
               <article className="panel program-item" key={p.id}>
                 <div>
                   <Link
-                    to={"/universities/" + p.university_id + "?tab=programs"}
+                    to={uniPath(p.university_id) + "?tab=programs"}
                   >
                     <h3>{p.name}</h3>
                   </Link>
@@ -290,7 +291,7 @@ function ScoresView() {
               <h2>
                 {universities.data?.find((u) => u.id === uid)?.name || rows[0].university_name || "جامعة"}
               </h2>
-              <Link className="btn secondary compact" to={"/universities/" + uid + "#admission"}>
+              <Link className="btn secondary compact" to={uniPath(uid) + "#admission"}>
                 افتح الجامعة
               </Link>
             </div>

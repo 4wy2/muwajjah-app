@@ -1,3 +1,4 @@
+import { uniPath } from "../lib/slugs";
 import { useUpgradeSheet, usePreferences } from "../lib/store";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -325,7 +326,7 @@ function RecentStrip({ universities }: { universities: University[] }) {
       </div>
       <div className="recent-row">
         {items.map((u) => (
-          <Link to={"/universities/" + u.id} className="recent-item" key={u.id}>
+          <Link to={uniPath(u.id)} className="recent-item" key={u.id}>
             <UniversityLogo university={u} />
             <span>{u.name}</span>
           </Link>
@@ -392,7 +393,7 @@ function MajorResults({
         {[...groups.entries()].map(([id, g]) => (
           <section className="panel major-group" key={id}>
             <h2>
-              <Link to={"/universities/" + id}>{g.name}</Link>
+              <Link to={uniPath(id)}>{g.name}</Link>
               {g.city && <small className="muted"> · {g.city}</small>}
             </h2>
             <ul>
