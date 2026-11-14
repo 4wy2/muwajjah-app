@@ -123,7 +123,7 @@ export function friendly(e: unknown) {
   if (/academic_year_check/.test(m))
     return "حفظ مسار بلا عام أكاديمي يحتاج تطبيق تحديث القاعدة database/002_textual_tracks.sql أولًا.";
   if (/publish_valid|source_required/.test(m))
-    return "لا يمكن نشر هذا السجل قبل إضافة رابط المصدر وتاريخ التحقق.";
+    return "ما ينفع ينشر قبل ما تضيف له «رابط المصدر» و«تاريخ التحقق» (افتح السجل وعبّهم، وبعدين انشره).";
   if (err?.code === "23505" || /duplicate key/.test(m))
     return "يوجد سجل مطابق مسبقًا (قد يكون في السلة).";
   if (["PGRST205", "42P01", "PGRST202"].includes(err?.code || ""))

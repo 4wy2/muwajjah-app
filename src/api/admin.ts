@@ -1,3 +1,4 @@
+import { friendly } from "../lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { allRows, db, rpc, queryClient } from "./client";
 import { useAuth, useMember, useAssignments } from "../auth/AuthProvider";
@@ -94,7 +95,7 @@ export async function changeState(
       for (const id of batch) (changed.has(id) ? done : failed).push(id);
     } catch (e) {
       failed.push(...batch);
-      message = (e as Error).message;
+      message = friendly(e);
     }
   }
   await invalidateContent();
@@ -104,8 +105,8 @@ export function describeState(r: StateResult, total: number) {
   if (!r.failed.length) return `تم تحديث ${r.done.length} سجل`;
   return (
     `نُفّذ الإجراء على ${r.done.length} من ${total} سجل. ` +
-    `تعذر ${r.failed.length}: قد تكون حالتها تغيّرت، أو أن الجامعة غير منشورة، أو أنها خارج صلاحيتك.` +
-    (r.message ? " (" + r.message + ")" : "")
+    `تعذر ${r.failed.length}: ` +
+    (r.message || "قد تكون حالتها تغيّرت، أو أن الجامعة غير منشورة، أو أنها خارج صلاحيتك.")
   );
 }
 export interface PublishReport {
