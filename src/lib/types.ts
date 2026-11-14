@@ -70,6 +70,9 @@ export interface Member {
   can_edit: boolean;
   can_publish: boolean;
   can_delete: boolean;
+  // Present once migration 018 is applied.
+  is_partner?: boolean;
+  managed_by?: string | null;
 }
 export type FeatureState = "free" | "plus" | "locked" | "login" | "hidden";
 export type ContentKind =

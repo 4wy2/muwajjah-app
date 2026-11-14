@@ -613,3 +613,79 @@ describe("migration 017: score saving apart from favorites", () => {
     await db.exec(`update guide_site_settings set private=true`);
   });
 });
+
+describe("migration 018: partners and their own teams", () => {
+  const STAFF = "77777777-7777-4777-8777-777777777777";
+  const OUT = "88888888-8888-4888-8888-888888888888";
+  const allowed = async (id, uni, action) => {
+    await as(id);
+    return (await q(`select guide_allowed($1,$2) ok`, [uni, action]))[0].ok;
+  };
+  it("lets a partner run a team inside their own universities only, and rolls back", async () => {
+    await root();
+    await db.exec(`insert into auth.users(id,email) values ('${STAFF}','staff@x.sa'), ('${OUT}','out@x.sa') on conflict do nothing`);
+    await db.exec(file("018_partner_teams.sql"));
+    await db.exec(file("018_partner_teams.sql"));
+    // Nothing changes for today's members.
+    expect(await allowed(EDITOR, U, "edit")).toBe(true);
+    expect(await allowed(EDITOR, U2, "read")).toBe(false);
+    // Only the owner names partners.
+    await as(EDITOR);
+    expect(await fails(`select guide_owner_set_partner($1,true)`, [EDITOR])).toBe(true);
+    expect(await fails(`select * from guide_partner_team()`)).toBe(true);
+    await as(OWNER);
+    await q(`select guide_owner_set_partner($1,true)`, [EDITOR]);
+    // The partner adds someone, only with their own universities.
+    await as(EDITOR);
+    expect(await fails(`select guide_partner_set_member('staff@x.sa','موظف',true,true,$1)`, [[U2]])).toBe(true);
+    expect(await fails(`select guide_partner_set_member('owner@x.sa','المالك',true,true,$1)`, [[U]])).toBe(true);
+    expect(await fails(`select guide_partner_set_member('nobody@x.sa','أحد',true,true,$1)`, [[U]])).toBe(true);
+    await q(`select guide_partner_set_member('staff@x.sa','موظف',true,true,$1)`, [[U]]);
+    expect((await q(`select email, can_edit, university_ids from guide_partner_team()`))).toEqual([
+      { email: "staff@x.sa", can_edit: true, university_ids: [U] },
+    ]);
+    expect(await allowed(STAFF, U, "edit")).toBe(true);
+    expect(await allowed(STAFF, U2, "read")).toBe(false);
+    expect(await allowed(STAFF, U, "publish")).toBe(false);
+    // Team members cannot manage anyone, and the owner's pages stay closed.
+    await as(STAFF);
+    expect(await fails(`select * from guide_partner_team()`)).toBe(true);
+    expect(await fails(`select * from guide_team_directory()`)).toBe(true);
+    // A partner cannot take over someone else's member.
+    await as(OWNER);
+    await q(`select guide_set_member('out@x.sa',false,false,false,true,$1)`, [[U]]);
+    await as(EDITOR);
+    expect(await fails(`select guide_partner_set_member('out@x.sa','غيره',false,true,$1)`, [[U]])).toBe(true);
+    expect(await fails(`select guide_partner_remove_member($1)`, [OUT])).toBe(true);
+    // Losing a university, or the partner role, closes it for the team too.
+    await as(OWNER);
+    await q(`select guide_set_member('editor@x.sa',true,false,false,true,$1)`, [[U2]]);
+    expect(await allowed(STAFF, U, "read")).toBe(false);
+    await as(OWNER);
+    await q(`select guide_set_member('editor@x.sa',true,false,false,true,$1)`, [[U]]);
+    expect(await allowed(STAFF, U, "edit")).toBe(true);
+    await as(OWNER);
+    await q(`select guide_owner_set_partner($1,false)`, [EDITOR]);
+    expect(await allowed(STAFF, U, "read")).toBe(false);
+    await as(OWNER);
+    await q(`select guide_owner_set_partner($1,true)`, [EDITOR]);
+    expect(await allowed(STAFF, U, "edit")).toBe(true);
+    // The partner can stop a member of their team.
+    await as(EDITOR);
+    await q(`select guide_partner_remove_member($1)`, [STAFF]);
+    expect(await allowed(STAFF, U, "read")).toBe(false);
+    await as(EDITOR);
+    await q(`select guide_partner_set_member('staff@x.sa','موظف',false,true,$1)`, [[U]]);
+    expect(await allowed(STAFF, U, "read")).toBe(true);
+    expect(await allowed(STAFF, U, "edit")).toBe(false);
+    // Rollback: team members are switched off, everyone else is as before.
+    await root();
+    await db.exec(file("018_partner_teams_rollback.sql"));
+    expect(await allowed(STAFF, U, "read")).toBe(false);
+    expect(await allowed(EDITOR, U, "edit")).toBe(true);
+    expect(await allowed(OWNER, U2, "delete")).toBe(true);
+    await root();
+    expect((await q(`select count(*)::int n from information_schema.columns where table_name='guide_admins' and column_name in ('is_partner','managed_by')`))[0].n).toBe(0);
+    await db.exec(`delete from guide_assignments where user_id in ('${OUT}','${STAFF}'); delete from guide_admins where user_id in ('${OUT}','${STAFF}')`);
+  });
+});

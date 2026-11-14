@@ -10,6 +10,7 @@ import {
   ChartNoAxesCombined,
   Crown,
   History,
+  UsersRound,
   ClipboardCheck,
   Activity,
   type LucideIcon,
@@ -24,6 +25,7 @@ const Workspace = lazy(() => import("./UniversityWorkspace"));
 const Audit = lazy(() => import("./Audit"));
 const Readiness = lazy(() => import("./Readiness"));
 const SiteHealth = lazy(() => import("./Health"));
+const PartnerTeam = lazy(() => import("./PartnerTeam"));
 export interface AdminModule {
   path: string;
   label: string;
@@ -98,6 +100,13 @@ export const adminModules: AdminModule[] = [
     icon: Upload,
     access: "editor",
     element: <Importer />,
+  },
+  {
+    path: "my-team",
+    label: "فريقي",
+    icon: UsersRound,
+    access: "partner",
+    element: <PartnerTeam />,
   },
   {
     path: "team",

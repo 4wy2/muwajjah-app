@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useMember } from "../auth/AuthProvider";
-import { rpc, queryClient } from "../api/client";
+import { rpc, queryClient, db } from "../api/client";
 import { useAdminRows } from "../api/admin";
 import {
   PageHeading,
@@ -50,6 +50,21 @@ export default function Team() {
         }[]
       >("guide_pending_signups"),
   });
+  // Partner roles (migration 018). null = not installed yet, so nothing shows.
+  const roles = useQuery({
+    queryKey: ["team-roles"],
+    enabled: member.is_owner,
+    queryFn: async () => {
+      const { data, error } = await db.from("guide_admins").select("user_id,is_partner,managed_by");
+      if (error) return null;
+      return data as { user_id: string; is_partner: boolean; managed_by: string | null }[];
+    },
+  });
+  const roleOf = (id: string) => roles.data?.find((r) => r.user_id === id);
+  const nameOf = (id: string) => {
+    const m = q.data?.find((x) => x.user_id === id);
+    return m?.display_name || m?.email || "";
+  };
   const unis = useAdminRows("universities");
   const [editing, setEditing] = useState<TeamMember | null | undefined>();
   const [removing, setRemoving] = useState<TeamMember | null>(null);
@@ -142,6 +157,10 @@ export default function Team() {
                       <small className="block" dir="ltr">
                         {m.email}
                       </small>
+                      {roleOf(m.user_id)?.is_partner && <small className="block">شريك</small>}
+                      {roleOf(m.user_id)?.managed_by && (
+                        <small className="block muted">من فريق {nameOf(roleOf(m.user_id)!.managed_by!)}</small>
+                      )}
                     </td>
                     <td data-label="الجامعات">{m.university_ids?.length || 0}</td>
                     <td data-label="الصلاحيات">
@@ -164,6 +183,27 @@ export default function Team() {
                       >
                         تعديل
                       </button>
+                      {roles.data && m.is_enabled && !roleOf(m.user_id)?.managed_by && (
+                        <button
+                          className="text-btn"
+                          disabled={busy}
+                          onClick={async () => {
+                            const on = !roleOf(m.user_id)?.is_partner;
+                            setBusy(true);
+                            try {
+                              await rpc("guide_owner_set_partner", { target_id: m.user_id, partner: on });
+                              await roles.refetch();
+                              toast(on ? "صار شريك، ويقدر يضيف فريقه" : "ألغيت الشراكة، وفريقه موقوف لين ترجعها");
+                            } catch (e) {
+                              toast(friendly(e), true);
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                        >
+                          {roleOf(m.user_id)?.is_partner ? "إلغاء الشراكة" : "اجعله شريك"}
+                        </button>
+                      )}
                       {m.is_enabled && (
                         <button
                           className="text-btn error-text"

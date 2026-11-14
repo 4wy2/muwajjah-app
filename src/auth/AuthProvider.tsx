@@ -75,7 +75,7 @@ export function useMember() {
     queryFn: async () => {
       const { data, error } = await db
         .from("guide_admins")
-        .select("user_id,is_owner,is_enabled,can_edit,can_publish,can_delete")
+        .select("*")
         .eq("user_id", user!.id)
         .maybeSingle();
       if (error) throw error;
