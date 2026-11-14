@@ -253,3 +253,6 @@
 .report-list li:last-child { border-bottom: 0; }
 .report-list li > div { min-width: 0; }
 .report-list p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.audit-summary h2 { font-size: 17px; margin: 0 0 10px; }
+.audit-summary table { width: 100%; }
+.audit-undo { font-size: 13px; padding: 4px 0; }

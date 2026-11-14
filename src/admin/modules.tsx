@@ -128,7 +128,7 @@ export const adminModules: AdminModule[] = [
     path: "audit",
     label: "سجل التغييرات",
     icon: History,
-    access: "owner",
+    access: "lead",
     element: <Audit />,
   },
   {

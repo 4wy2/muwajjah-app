@@ -741,3 +741,36 @@ describe("migration 020: tracks without a source can be published", () => {
     await db.exec(file("020_tracks_without_source.sql"));
   });
 });
+
+describe("migration 021: partners read their team's change log", () => {
+  it("shows a partner their team's changes only, and rolls back", async () => {
+    const STAFF = "77777777-7777-4777-8777-777777777777";
+    await root();
+    await db.exec(file("018_partner_teams.sql"));
+    await db.exec(file("021_partner_audit.sql"));
+    await db.exec(file("021_partner_audit.sql"));
+    await as(OWNER);
+    await q(`select guide_owner_set_partner($1,true)`, [EDITOR]);
+    await as(EDITOR);
+    await q(`select guide_partner_set_member('staff@x.sa','موظف',true,true,$1)`, [[U]]);
+    await as(STAFF);
+    await q(`update guide_programs set name='تعديل الموظف' where id=$1`, [P2]);
+    await as(OWNER);
+    await q(`update guide_programs set name='تعديل المالك' where id=$1`, [P2]);
+    await as(EDITOR);
+    const seen = await q(`select actor_id from guide_audit_log`);
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((r) => r.actor_id === STAFF || r.actor_id === EDITOR)).toBe(true);
+    await as(STAFF);
+    expect(await q(`select * from guide_audit_log`)).toEqual([]);
+    await as(STUDENT);
+    expect(await q(`select * from guide_audit_log`)).toEqual([]);
+    await as(EDITOR);
+    expect(await fails(`delete from guide_audit_log`)).toBe(true); // no delete rights
+    await root();
+    expect((await q(`select count(*)::int n from guide_audit_log where actor_id=$1`, [STAFF]))[0].n).toBeGreaterThan(0); // nothing was deleted
+    await db.exec(file("021_partner_audit_rollback.sql"));
+    await as(EDITOR);
+    expect(await q(`select * from guide_audit_log`)).toEqual([]);
+  });
+});
