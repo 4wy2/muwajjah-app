@@ -283,70 +283,75 @@ function ScoresView() {
           <Link to="/">اختر جامعة للبدء</Link>
         </Empty>
       ) : (
-        <div className="panel table-wrap stack">
-          <table>
-            <thead>
-              <tr>
-                <th>الجامعة</th>
-                <th>المسار</th>
-                <th>الثانوية</th>
-                <th>القدرات</th>
-                <th>التحصيلي</th>
-                <th>الموزونة</th>
-                <th>التاريخ</th>
-                <th>
-                  <span className="sr-only">حذف</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {q.data.map((s) => (
-                <tr key={s.id}>
-                  <td className="cell-main">
-                    <Link
-                      to={
-                        "/universities/" + s.university_id + "#admission"
-                      }
-                    >
-                      {universities.data?.find((u) => u.id === s.university_id)
-                        ?.name ||
-                        s.university_name ||
-                        "عرض الجامعة"}
-                    </Link>
-                  </td>
-                  <td className="cell-full" data-label="المسار">{s.track_name}</td>
-                  <td data-label="الثانوية">{s.school}</td>
-                  <td data-label="القدرات">{s.aptitude}</td>
-                  <td data-label="التحصيلي">{s.achievement}</td>
-                  <td className="accent cell-full" data-label="الموزونة">
-                    <b>{s.result}%</b>
-                  </td>
-                  <td data-label="التاريخ">{date(s.created_at)}</td>
-                  <td className="cell-actions">
-                    <button
-                      className="icon-btn"
-                      aria-label="حذف هذه النتيجة"
-                      title="حذف"
-                      onClick={async () => {
-                        try {
-                          await deleteScore(s.id);
-                          toast("حُذفت النتيجة");
-                        } catch (e) {
-                          toast(friendly(e), true);
-                        }
-                      }}
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        // One block per university, newest first, each with a way back to it.
+        groupByUniversity(q.data).map(([uid, rows]) => (
+          <section className="panel score-group" key={uid}>
+            <div className="score-group-head">
+              <h2>
+                {universities.data?.find((u) => u.id === uid)?.name || rows[0].university_name || "جامعة"}
+              </h2>
+              <Link className="btn secondary compact" to={"/universities/" + uid + "#admission"}>
+                افتح الجامعة
+              </Link>
+            </div>
+            <div className="table-wrap stack">
+              <table>
+                <thead>
+                  <tr>
+                    <th>المسار</th>
+                    <th>الثانوية</th>
+                    <th>القدرات</th>
+                    <th>التحصيلي</th>
+                    <th>الموزونة</th>
+                    <th>التاريخ</th>
+                    <th>
+                      <span className="sr-only">حذف</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((s) => (
+                    <tr key={s.id}>
+                      <td className="cell-main">{s.track_name}</td>
+                      <td data-label="الثانوية">{s.school}</td>
+                      <td data-label="القدرات">{s.aptitude}</td>
+                      <td data-label="التحصيلي">{s.achievement}</td>
+                      <td className="accent cell-full" data-label="الموزونة">
+                        <b>{s.result}%</b>
+                      </td>
+                      <td data-label="التاريخ">{date(s.created_at)}</td>
+                      <td className="cell-actions">
+                        <button
+                          className="icon-btn"
+                          aria-label="حذف هذه النتيجة"
+                          title="حذف"
+                          onClick={async () => {
+                            try {
+                              await deleteScore(s.id);
+                              toast("حُذفت النتيجة");
+                            } catch (e) {
+                              toast(friendly(e), true);
+                            }
+                          }}
+                        >
+                          <Trash2 size={15} aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ))
       )}
     </>
   );
+}
+function groupByUniversity<T extends { university_id: string }>(rows: T[]) {
+  const map = new Map<string, T[]>();
+  for (const r of rows) map.set(r.university_id, [...(map.get(r.university_id) || []), r]);
+  return [...map.entries()];
 }
 export function Subscription() {
   const q = usePlus();

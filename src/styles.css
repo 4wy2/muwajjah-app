@@ -2770,3 +2770,11 @@ h1, h2, h3 { text-wrap: balance; }
 .notice.caution a { color: inherit; text-decoration: underline; }
 .notice.small { font-size: 14px; padding: 10px 13px; margin: 10px 0; }
 [data-theme="dark"] .notice.caution { background: #3a2f17; color: #f3d48b; }
+.score-group { margin-bottom: 14px; }
+.score-group-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.score-group-head h2 { font-size: 17px; margin: 0; }
+.score-parts { margin: 6px 0 0; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.calculator-locked p { margin: 4px 0 12px; }
+.calc-actions .score-output { flex: 1 1 100%; margin: 4px 0 0; padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 4px; }
+.calc-actions .score-output .score-parts { margin: 0; font-size: 13px; color: var(--muted); }
+.score-group-head .btn { white-space: nowrap; }

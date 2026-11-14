@@ -2,7 +2,7 @@ import { usePreferences } from "../lib/store";
 import { useUpgradeSheet } from "../lib/store";
 import { track } from "../lib/analytics";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link, useParams, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useParams, useSearchParams } from "react-router-dom";
 import {
   MapPin,
   ExternalLink,
@@ -176,82 +176,106 @@ export function CalculatorForm({
   website?: string;
 }) {
   const { user } = useAuth();
+  const location = useLocation();
   const history = useScores();
   const toast = useToast();
+  const grades = usePreferences((p) => p.grades);
+  const setGrades = usePreferences((p) => p.setGrades);
   const weighted = tracks.filter(isWeighted);
   const [trackId, setTrackId] = useState("");
-  const [values, setValues] = useState(["", "", ""]);
-  const [edited, setEdited] = useState(false);
-  const [result, setResult] = useState<number | null>(null);
-  const [error, setError] = useState("");
+  const [values, setValues] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savedKey, setSavedKey] = useState("");
   const savingFeature = useSaving("score_saving").state;
+  // The calculator itself follows the owner's setting (database/022).
+  // No setting yet (null) = shown to everyone, as before.
+  const calc = useFeature("calculator", user?.id);
+  const calcState = calc.data ?? "free";
   const canSave = !!user && (savingFeature === "free" || savingFeature === "plus");
   const track = weighted.find((t) => t.id === trackId) || weighted[0];
-  useEffect(() => {
-    setValues(["", "", ""]);
-    setEdited(false);
-    setResult(null);
-  }, [user?.id]);
-  // Prefill only from a saved result for the same track; never invent grades.
-  useEffect(() => {
-    if (!track || edited) return;
-    const last = history.data?.find((h) => h.track_id === track.id);
-    setValues(
-      last
+  // Grades are the same at every university: start from what this student
+  // typed last (kept on this device) or their latest saved result. Never invented.
+  const last = history.data?.[0];
+  const start =
+    grades && grades.some((g) => g !== "")
+      ? grades
+      : last
         ? [String(last.school), String(last.aptitude), String(last.achievement)]
-        : ["", "", ""],
-    );
-  }, [history.data, edited, track?.id]);
+        : ["", "", ""];
+  const shownValues = values ?? start;
+  useEffect(() => setValues(null), [user?.id]);
   if (!track) return null;
+  if (calc.isPending) return null;
+  if (calcState === "hidden") return null;
+  if (calcState === "locked" || calcState === "login") {
+    return (
+      <div className="calculator calculator-locked">
+        <h3>
+          <Calculator size={18} aria-hidden="true" /> احسب موزونتك
+        </h3>
+        <p className="muted small">اكتب درجاتك وتطلع نسبتك الموزونة في هذي الجامعة فورًا.</p>
+        {calcState === "login" ? (
+          <Link className="btn primary compact" to={"/auth/login?next=" + encodeURIComponent(location.pathname)}>
+            سجّل دخولك وجرّبها
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className="btn primary compact"
+            onClick={() => useUpgradeSheet.getState().show("calculator")}
+          >
+            افتح الحاسبة
+          </button>
+        )}
+      </div>
+    );
+  }
+  const weights = [track.school_weight, track.aptitude_weight, track.achievement_weight].map(Number);
+  const anyTyped = shownValues.some((v, i) => weights[i] > 0 && v.trim() !== "");
+  // Live result: computed as the student types, once every needed grade is valid.
+  let result: number | null = null;
+  let error = "";
+  try {
+    result = calculate(track, shownValues);
+  } catch (err) {
+    if (anyTyped && shownValues.every((v, i) => weights[i] === 0 || v.trim() !== "")) error = friendly(err);
+  }
+  const parts = ["الثانوية", "القدرات", "التحصيلي"]
+    .map((label, i) => ({ label, w: weights[i], v: Number(shownValues[i]) }))
+    .filter((p) => p.w > 0);
+  const key = track.id + ":" + shownValues.join(",");
   return (
     <div className="calculator">
       <h3>
-        <Calculator size={18} /> احسب موزونتك
+        <Calculator size={18} aria-hidden="true" /> احسب موزونتك
       </h3>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          setError("");
+          if (result === null || !user || !canSave) return;
+          setSaving(true);
           try {
-            const score = calculate(track, values);
-            setResult(score);
-            if (user && canSave) {
-              setSaving(true);
-              try {
-                await saveScore({
-                  user_id: user.id,
-                  university_id: universityId,
-                  track_id: track.id,
-                  school: Number(values[0] || 0),
-                  aptitude: Number(values[1] || 0),
-                  achievement: Number(values[2] || 0),
-                  result: score,
-                });
-                toast("حُفظت النتيجة في حسابك");
-              } catch (err) {
-                toast("تم الحساب، وتعذر حفظ النتيجة. " + friendly(err), true);
-              } finally {
-                setSaving(false);
-              }
-            }
+            await saveScore({
+              user_id: user.id,
+              university_id: universityId,
+              track_id: track.id,
+              school: Number(shownValues[0] || 0),
+              aptitude: Number(shownValues[1] || 0),
+              achievement: Number(shownValues[2] || 0),
+              result,
+            });
+            setSavedKey(key);
+            toast("حُفظت النتيجة في حسابك");
           } catch (err) {
-            setError(friendly(err));
-            setResult(null);
+            toast("تعذر حفظ النتيجة. " + friendly(err), true);
+          } finally {
+            setSaving(false);
           }
         }}
       >
         {weighted.length > 1 && (
           <Field label="المسار">
-            <select
-              value={track.id}
-              onChange={(e) => {
-                setTrackId(e.target.value);
-                setEdited(false);
-                setResult(null);
-                setError("");
-              }}
-            >
+            <select value={track.id} onChange={(e) => setTrackId(e.target.value)}>
               {weighted.map((t) => (
                 <option value={t.id} key={t.id}>
                   {[t.name, shown(t.gender), shown(t.academic_year)].filter(Boolean).join(" · ")}
@@ -262,12 +286,9 @@ export function CalculatorForm({
         )}
         <div className="score-fields">
           {["الثانوية", "القدرات", "التحصيلي"].map((label, i) => {
-            const w = Number(
-              [track.school_weight, track.aptitude_weight, track.achievement_weight][i],
-            );
-            if (w === 0) return null;
+            if (weights[i] === 0) return null;
             return (
-              <Field key={label} label={label + " (" + w + "%)"}>
+              <Field key={label} label={label + " (" + weights[i] + "%)"}>
                 <input
                   type="number"
                   min="0"
@@ -276,26 +297,38 @@ export function CalculatorForm({
                   inputMode="decimal"
                   dir="ltr"
                   required
-                  value={values[i]}
+                  value={shownValues[i]}
                   placeholder="0 – 100"
                   onChange={(e) => {
-                    setEdited(true);
-                    setValues((v) => v.map((x, j) => (i === j ? e.target.value : x)));
-                    setResult(null);
+                    const next = shownValues.map((x, j) => (i === j ? e.target.value : x));
+                    setValues(next);
+                    setGrades(next);
                   }}
                 />
               </Field>
             );
           })}
         </div>
-        <div className="calc-actions">
-          <button className="btn primary compact" disabled={saving}>
-            {saving ? "جارٍ الحفظ…" : "احسب"}
-          </button>
+        <div className="calc-actions" aria-live="polite">
           {result !== null && (
             <output className="score-output">
-              نسبتك الموزونة <strong dir="ltr">{result.toFixed(2)}%</strong>
+              <span>
+                نسبتك الموزونة <strong dir="ltr">{result.toFixed(2)}%</strong>
+              </span>
+              <small className="score-parts">
+                {parts.map((p, i) => (
+                  <span key={p.label}>
+                    {i > 0 && " + "}
+                    {p.label} <bdi>{((p.v * p.w) / 100).toFixed(2)}</bdi>
+                  </span>
+                ))}
+              </small>
             </output>
+          )}
+          {result !== null && canSave && (
+            <button className="btn secondary compact" disabled={saving || savedKey === key}>
+              {saving ? "جارٍ الحفظ…" : savedKey === key ? "محفوظة ✓" : "احفظ النتيجة"}
+            </button>
           )}
         </div>
         {error && (

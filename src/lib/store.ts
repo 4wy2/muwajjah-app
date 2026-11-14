@@ -10,6 +10,8 @@ export const usePreferences = create<{
   recent: string[];
   addRecent: (id: string) => void;
   clearRecent: () => void;
+  grades: string[] | null;
+  setGrades: (g: string[]) => void;
 }>()(
   persist(
     (set, get) => ({
@@ -33,6 +35,10 @@ export const usePreferences = create<{
       addRecent: (id) =>
         set({ recent: [id, ...get().recent.filter((x) => x !== id)].slice(0, 8) }),
       clearRecent: () => set({ recent: [] }),
+      // The last grades typed in the calculator, on this device only, so the
+      // next university opens with them filled in.
+      grades: null,
+      setGrades: (g) => set({ grades: g.slice(0, 3).map((x) => String(x).slice(0, 8)) }),
     }),
     { name: "muwajjah-preferences-v2" },
   ),

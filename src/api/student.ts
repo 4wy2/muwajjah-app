@@ -146,6 +146,7 @@ export function usePlus() {
 // Names of the features that are Plus right now (state "locked" for others,
 // "plus" for holders), so offers never mention a hidden or free feature.
 const PLUS_LABELS: Record<string, string> = {
+  calculator: "حاسبة النسبة الموزونة",
   program_search: "البحث بالتخصص في كل الجامعات",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
@@ -185,7 +186,12 @@ export function useFeatureStates(): Record<string, string | null> | undefined {
   if (!states.data) return undefined;
   const out: Record<string, string | null> = {};
   Object.keys(PLUS_LABELS).forEach((k, i) => {
-    out[k] = k === "saving" || k === "score_saving" ? savingState(states.data[i], !!user) : states.data[i];
+    out[k] =
+      k === "saving" || k === "score_saving"
+        ? savingState(states.data[i], !!user)
+        : k === "calculator"
+          ? (states.data[i] ?? "free") // no setting yet = open, as before 022
+          : states.data[i];
   });
   return out;
 }

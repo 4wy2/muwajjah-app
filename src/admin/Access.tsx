@@ -25,6 +25,7 @@ interface Student {
 }
 // Features the owner controls, in the order they are listed.
 const FEATURE_NAMES: Record<string, string> = {
+  calculator: "حاسبة الموزونة",
   program_search: "البحث بالتخصص",
   comparison: "مقارنة الجامعات",
   compare_share: "مشاركة المقارنة برابط",

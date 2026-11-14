@@ -774,3 +774,22 @@ describe("migration 021: partners read their team's change log", () => {
     expect(await q(`select * from guide_audit_log`)).toEqual([]);
   });
 });
+
+describe("migration 022: calculator feature", () => {
+  it("adds a calculator setting that starts free and only the owner changes", async () => {
+    await root();
+    await db.exec(file("022_calculator_feature.sql"));
+    await db.exec(file("022_calculator_feature.sql"));
+    await as(STUDENT);
+    expect(await fails(`select guide_owner_set_feature('calculator','plus',false)`)).toBe(true);
+    await as(OWNER);
+    expect((await q(`select access_mode from guide_feature_flags where feature_key='calculator'`))[0].access_mode).toBe("free");
+    await q(`select guide_owner_set_feature('calculator','members',false)`);
+    expect((await q(`select access_mode from guide_feature_flags where feature_key='calculator'`))[0].access_mode).toBe("members");
+    await root();
+    await db.exec(file("022_calculator_feature_rollback.sql"));
+    expect(await q(`select * from guide_feature_flags where feature_key='calculator'`)).toEqual([]);
+    await as(OWNER);
+    expect(await fails(`select guide_owner_set_feature('calculator','free',false)`)).toBe(true);
+  });
+});

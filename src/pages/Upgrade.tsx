@@ -62,6 +62,13 @@ export const BENEFITS: Record<
     to: "/student/favorites",
     cta: "افتح مفضلتك",
   },
+  calculator: {
+    icon: Calculator,
+    title: "احسب موزونتك في أي جامعة",
+    text: "اكتب درجاتك مرة وحدة، وتطلع لك نسبتك الموزونة في كل جامعة تفتحها، مع تفصيل كل جزء.",
+    to: "/",
+    cta: "افتح أي جامعة",
+  },
   score_saving: {
     icon: Calculator,
     title: "احفظ نتائج الموزونة",
@@ -89,6 +96,7 @@ export const BENEFITS: Record<
 // Both follow whatever the owner set, so the page never promises a feature
 // that is hidden or lists as free one that needs the upgrade.
 const VERBS: Record<string, string> = {
+  calculator: "احسب موزونتك",
   program_search: "ابحث بالتخصص",
   comparison: "قارن",
   historical_cutoffs: "شوف نسب القبول",
@@ -98,6 +106,7 @@ const VERBS: Record<string, string> = {
   compare_share: "شارك مقارنتك",
 };
 const FREE_NAMES: Record<string, string> = {
+  calculator: "حاسبة الموزونة",
   program_search: "البحث بالتخصص",
   comparison: "مقارنة الجامعات",
   historical_cutoffs: "نسب القبول السابقة",
@@ -106,7 +115,7 @@ const FREE_NAMES: Record<string, string> = {
   filters: "فلترة الجامعات",
   compare_share: "مشاركة المقارنة",
 };
-const BASE_FREE = ["صفحات الجامعات كاملة", "السكن", "الشروط", "حاسبة الموزونة"];
+const BASE_FREE = ["صفحات الجامعات كاملة", "السكن", "الشروط", "النسب الموزونة لكل مسار"];
 export const joinAr = (items: string[]) =>
   items.length < 2 ? items.join("") : items.slice(0, -1).join("، ") + "، و" + items[items.length - 1];
 export function headline(keys: string[]) {
