@@ -215,6 +215,7 @@ export default function Auth({
                 type="email"
                 dir="ltr"
                 autoComplete="email"
+                spellCheck={false}
                 placeholder="name@example.com"
                 required
               />

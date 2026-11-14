@@ -689,3 +689,35 @@ describe("migration 018: partners and their own teams", () => {
     await db.exec(`delete from guide_assignments where user_id in ('${OUT}','${STAFF}'); delete from guide_admins where user_id in ('${OUT}','${STAFF}')`);
   });
 });
+
+describe("migration 019: report an error", () => {
+  it("lets signed-in students send, only the team reads, limits spam, and rolls back", async () => {
+    await root();
+    await db.exec(file("019_error_reports.sql"));
+    await db.exec(file("019_error_reports.sql"));
+    const send = (msg = "رابط التقديم قديم") =>
+      fails(`insert into guide_error_reports(university_id, section, message) values ($1,'admission',$2)`, [U, msg]);
+    await as(null);
+    expect(await send()).toBe(true); // visitors cannot send
+    await as(STUDENT);
+    expect(await send("قص")).toBe(true); // too short
+    expect(await send()).toBe(false);
+    expect(await q(`select * from guide_error_reports`)).toEqual([]); // students read nothing
+    expect(await fails(`update guide_error_reports set status='done'`)).toBe(true); // no update rights
+    expect(await fails(`insert into guide_error_reports(university_id, message, user_id) values ($1,'باسم غيري',$2)`, [U, STUDENT2])).toBe(true);
+    for (let i = 0; i < 4; i++) expect(await send()).toBe(false);
+    expect(await send()).toBe(true); // 6th in a day refused
+    await as(EDITOR); // assigned to U
+    const rows = await q(`select id, status from guide_error_reports where university_id=$1`, [U]);
+    expect(rows.length).toBe(5);
+    await q(`select guide_set_error_report($1,true)`, [rows[0].id]);
+    expect((await q(`select status from guide_error_reports where id=$1`, [rows[0].id]))[0].status).toBe("done");
+    await as(STUDENT);
+    expect(await fails(`select guide_set_error_report($1,false)`, [rows[0].id])).toBe(true);
+    await as(OWNER);
+    expect((await q(`select count(*)::int n from guide_error_reports`))[0].n).toBe(5);
+    await root();
+    await db.exec(file("019_error_reports_rollback.sql"));
+    expect((await q(`select to_regclass('public.guide_error_reports') t`))[0].t).toBe(null);
+  });
+});

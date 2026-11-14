@@ -37,6 +37,7 @@ import {
 import { useAuth, useMember } from "../auth/AuthProvider";
 import { useScores, saveScore, useSaving } from "../api/student";
 import { UniversityLogo, FavoriteButton } from "../components/UniversityCard";
+import { ReportError } from "../components/ReportError";
 import {
   Empty,
   ErrorState,
@@ -168,9 +169,11 @@ function SectionList({
 export function CalculatorForm({
   tracks,
   universityId,
+  website,
 }: {
   tracks: Track[];
   universityId: string;
+  website?: string;
 }) {
   const { user } = useAuth();
   const history = useScores();
@@ -321,6 +324,8 @@ export function CalculatorForm({
             </>
           )}
         </p>
+        {/* Where these weights come from, only when the track has a source or a check date. */}
+        <Source url={track.source_url} verified={track.verified_on} website={website} />
       </form>
     </div>
   );
@@ -685,7 +690,7 @@ export default function University() {
               </div>
             )}
             <ErrorBoundary>
-              <CalculatorForm tracks={trackList} universityId={id} />
+              <CalculatorForm tracks={trackList} universityId={id} website={web} />
             </ErrorBoundary>
           </Block>,
         );
@@ -803,6 +808,7 @@ export default function University() {
       {!loadingContent && !contentError && blocks.length === 1 && (
         <p className="muted">لم تُنشر تفاصيل هذه الجامعة بعد.</p>
       )}
+      <ReportError universityId={id} name={uni.name} />
     </article>
   );
 }

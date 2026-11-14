@@ -247,3 +247,9 @@
 .hc-tip { display: flex; gap: 8px; align-items: flex-start; margin-top: 20px; }
 .hc-tip svg { flex: 0 0 auto; margin-top: 3px; }
 @media (max-width: 600px) { .hc-list { grid-template-columns: 1fr; } .hc-stats { grid-template-columns: repeat(2, 1fr); } }
+.report-tabs { display: flex; gap: 6px; }
+.report-list { list-style: none; margin: 0; padding: 0; }
+.report-list li { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.report-list li:last-child { border-bottom: 0; }
+.report-list li > div { min-width: 0; }
+.report-list p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }

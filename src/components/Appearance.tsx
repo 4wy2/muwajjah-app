@@ -7,8 +7,12 @@ export function Appearance() {
   useEffect(() => {
     const media = matchMedia("(prefers-color-scheme: dark)");
     const apply = () => {
-      document.documentElement.dataset.theme =
-        theme === "system" ? (media.matches ? "dark" : "light") : theme;
+      const mode = theme === "system" ? (media.matches ? "dark" : "light") : theme;
+      document.documentElement.dataset.theme = mode;
+      // The browser bar follows the page: purple by day, dark at night.
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", mode === "dark" ? "#16151e" : "#6a4fcf");
     };
     apply();
     media.addEventListener("change", apply);

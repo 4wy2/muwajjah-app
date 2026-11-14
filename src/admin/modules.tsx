@@ -11,6 +11,7 @@ import {
   Crown,
   History,
   UsersRound,
+  Flag,
   ClipboardCheck,
   Activity,
   type LucideIcon,
@@ -26,6 +27,7 @@ const Audit = lazy(() => import("./Audit"));
 const Readiness = lazy(() => import("./Readiness"));
 const SiteHealth = lazy(() => import("./Health"));
 const PartnerTeam = lazy(() => import("./PartnerTeam"));
+const Reports = lazy(() => import("./Reports"));
 export interface AdminModule {
   path: string;
   label: string;
@@ -50,6 +52,13 @@ export const adminModules: AdminModule[] = [
     icon: ClipboardCheck,
     access: "member",
     element: <Readiness />,
+  },
+  {
+    path: "reports",
+    label: "بلاغات الطلاب",
+    icon: Flag,
+    access: "member",
+    element: <Reports />,
   },
   {
     path: "universities",

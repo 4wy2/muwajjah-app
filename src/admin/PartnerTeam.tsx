@@ -163,6 +163,8 @@ export default function PartnerTeam() {
                 name="email"
                 type="email"
                 dir="ltr"
+                autoComplete="off"
+                spellCheck={false}
                 required
                 defaultValue={editing?.email}
                 readOnly={!!editing?.email}

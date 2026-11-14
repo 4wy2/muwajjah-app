@@ -26,6 +26,8 @@ export function UniversityLogo({
         <img
           src={url}
           alt={"شعار " + university.name}
+          width={46}
+          height={46}
           loading="lazy"
           onError={(e) => {
             e.currentTarget.style.display = "none";

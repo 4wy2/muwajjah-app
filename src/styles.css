@@ -2757,3 +2757,12 @@ dialog.upgrade-sheet {
 /* Share the comparison */
 .compare-share { display: flex; justify-content: flex-start; margin: -4px 0 12px; }
 .compare-share .btn { gap: 6px; }
+
+/* Web Interface Guidelines pass: steady numbers, no double-tap delay,
+   modals keep their scroll, headings break evenly. */
+table, .score-output, .result-count { font-variant-numeric: tabular-nums; }
+button, a, [role="button"], label, summary { touch-action: manipulation; }
+dialog { overscroll-behavior: contain; }
+h1, h2, h3 { text-wrap: balance; }
+.report-error { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; }
+.report-error .text-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }

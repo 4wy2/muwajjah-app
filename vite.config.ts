@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 
 // One launch switch for the whole site, set at build time:
 //   LAUNCH=1  → no "preview" bar, search engines allowed (robots).
@@ -38,6 +39,33 @@ function launchSwitch(): Plugin {
           urls.map((u) => "  <url><loc>" + siteUrl + u + "</loc></url>").join("\n") +
           "\n</urlset>\n",
       });
+    },
+    // Link previews: WhatsApp and Telegram do not run the app, so each
+    // university gets a copy of index.html whose title and description name it.
+    // Netlify serves that file first; the app then opens the same page as usual.
+    writeBundle(options) {
+      if (!launch) return;
+      const out = options.dir || "dist";
+      const base = readFileSync(join(out, "index.html"), "utf8");
+      const meta: Record<string, { name: string; city: string }> = JSON.parse(
+        readFileSync("scripts/university-meta.json", "utf8"),
+      );
+      const esc = (t: string) => t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+      for (const [id, u] of Object.entries(meta)) {
+        const title = esc(u.name + " | مُوجّه");
+        const desc = esc(
+          "شروط القبول والنسب الموزونة والتخصصات والسكن في " + u.name + (u.city ? " (" + u.city + ")" : "") + "، في صفحة وحدة.",
+        );
+        const url = siteUrl + "universities/" + id;
+        const html = base
+          .replace(/<title>[^<]*<\/title>/, "<title>" + title + "</title>")
+          .replace(/(<meta property="og:title" content=")[^"]*"/, "$1" + title + '"')
+          .replace(/(<meta\s+name="description"\s+content=")[^"]*"/, "$1" + desc + '"')
+          .replace(/(<meta\s+property="og:description"\s+content=")[^"]*"/, "$1" + desc + '"')
+          .replace('<meta property="og:type" content="website" />', '<meta property="og:type" content="website" />\n    <meta property="og:url" content="' + url + '" />');
+        mkdirSync(join(out, "universities", id), { recursive: true });
+        writeFileSync(join(out, "universities", id, "index.html"), html);
+      }
     },
   };
 }
