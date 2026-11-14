@@ -721,3 +721,23 @@ describe("migration 019: report an error", () => {
     expect((await q(`select to_regclass('public.guide_error_reports') t`))[0].t).toBe(null);
   });
 });
+
+describe("migration 020: tracks without a source can be published", () => {
+  it("allows publishing without source/date, keeps the weights rule, and rolls back", async () => {
+    await root();
+    const ins = (w) =>
+      q(`insert into guide_tracks(university_id,name,academic_year,school_weight,aptitude_weight,achievement_weight) values($1,$2,'1447',$3,$4,$5) returning id`, [U, "بلا مصدر " + w.join("-"), ...w]);
+    const t = (await ins([30, 30, 40]))[0].id;
+    expect(await fails(`update guide_tracks set published=true where id=$1`, [t])).toBe(true); // old rule
+    await db.exec(file("020_tracks_without_source.sql"));
+    await db.exec(file("020_tracks_without_source.sql"));
+    expect(await fails(`update guide_tracks set published=true where id=$1`, [t])).toBe(false);
+    const bad = (await ins([30, 30, 30]))[0].id;
+    expect(await fails(`update guide_tracks set published=true where id=$1`, [bad])).toBe(true); // 90% still refused
+    await db.exec(file("020_tracks_without_source_rollback.sql"));
+    expect((await q(`select published from guide_tracks where id=$1`, [t]))[0].published).toBe(false);
+    expect(await fails(`update guide_tracks set published=true where id=$1`, [t])).toBe(true);
+    await db.exec(`delete from guide_tracks where id in ('${t}','${bad}')`);
+    await db.exec(file("020_tracks_without_source.sql"));
+  });
+});

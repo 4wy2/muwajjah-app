@@ -324,8 +324,12 @@ export function CalculatorForm({
             </>
           )}
         </p>
-        {/* Where these weights come from, only when the track has a source or a check date. */}
-        <Source url={track.source_url} verified={track.verified_on} website={website} />
+        {/* Where these weights come from, or a note when that is not filled in yet. */}
+        {unverified(track) ? (
+          <UnverifiedNote website={website} />
+        ) : (
+          <Source url={track.source_url} verified={track.verified_on} website={website} />
+        )}
       </form>
     </div>
   );
@@ -352,11 +356,34 @@ function TrackItem({
         ))}
       </div>
       {weighted && <WeightBar t={t} />}
+      {weighted && unverified(t) && <UnverifiedNote website={website} />}
       <RichText text={t.requirements} />
       {!hideSource && (
         <Source url={t.source_url} verified={t.verified_on} website={website} />
       )}
     </article>
+  );
+}
+
+// A track published before its source and check date were filled in.
+const unverified = (t: Track) => !String(t.source_url || "").trim() || !t.verified_on;
+function UnverifiedNote({ website }: { website?: string }) {
+  return (
+    <p className="notice caution small" role="note">
+      هذي الأوزان منقولة من أدلة القبول وما راجعناها على دليل هذي السنة للحين. تأكد منها
+      {website ? (
+        <>
+          {" "}
+          في{" "}
+          <a href={website} target="_blank" rel="noopener noreferrer">
+            موقع الجامعة
+          </a>
+        </>
+      ) : (
+        " من موقع الجامعة"
+      )}{" "}
+      قبل ما تعتمد عليها.
+    </p>
   );
 }
 

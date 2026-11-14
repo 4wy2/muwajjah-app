@@ -2766,3 +2766,7 @@ dialog { overscroll-behavior: contain; }
 h1, h2, h3 { text-wrap: balance; }
 .report-error { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); text-align: center; }
 .report-error .text-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+.notice.caution { background: #fff7e6; color: #8a5a00; }
+.notice.caution a { color: inherit; text-decoration: underline; }
+.notice.small { font-size: 14px; padding: 10px 13px; margin: 10px 0; }
+[data-theme="dark"] .notice.caution { background: #3a2f17; color: #f3d48b; }
