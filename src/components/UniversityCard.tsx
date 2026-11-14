@@ -1,4 +1,5 @@
-import { memo } from "react";
+import { memo, useEffect, useState } from "react";
+import { localLogo } from "../lib/logos";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   MapPin,
@@ -17,20 +18,25 @@ import { useToast } from "./ui";
 export function UniversityLogo({
   university,
 }: {
-  university: Pick<University, "logo_url" | "name">;
+  university: Pick<University, "logo_url" | "name"> & { id?: string };
 }) {
-  const url = safeUrl(university.logo_url);
+  // Prefer the copy stored with the site; fall back to the saved link, then to the icon.
+  const local = localLogo(university.id);
+  const remote = safeUrl(university.logo_url);
+  const [src, setSrc] = useState(local || remote);
+  useEffect(() => setSrc(local || remote), [local, remote]);
   return (
     <div className="university-logo">
-      {url ? (
+      {src ? (
         <img
-          src={url}
+          src={src}
           alt={"شعار " + university.name}
           width={46}
           height={46}
           loading="lazy"
           onError={(e) => {
-            e.currentTarget.style.display = "none";
+            if (src === local && remote && remote !== local) setSrc(remote);
+            else e.currentTarget.style.display = "none";
           }}
         />
       ) : null}
