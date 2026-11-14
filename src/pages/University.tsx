@@ -78,7 +78,9 @@ export function Source({
   website?: string;
 }) {
   const href = safeUrl(url);
-  if (!href && !verified) return null;
+  // Dates are not shown to students; only the source link appears.
+  void verified;
+  if (!href) return null;
   const own = !!href && !!website && hostOf(href) === hostOf(website);
   return (
     <div className="source">
@@ -87,7 +89,6 @@ export function Source({
           {own ? "موقع الجامعة" : "المصدر"} <ExternalLink size={12} />
         </a>
       )}
-      {verified && !href && <small>رُوجع على المصدر الرسمي</small>}
     </div>
   );
 }
@@ -356,12 +357,8 @@ export function CalculatorForm({
             </>
           )}
         </p>
-        {/* Where these weights come from, or a note when that is not filled in yet. */}
-        {unverified(track) ? (
-          <UnverifiedNote website={website} />
-        ) : (
-          <Source url={track.source_url} verified={track.verified_on} website={website} />
-        )}
+        {/* Where these weights come from, when a source is filled in. */}
+        <Source url={track.source_url} verified={track.verified_on} website={website} />
       </form>
     </div>
   );
@@ -388,32 +385,11 @@ function TrackItem({
         ))}
       </div>
       {weighted && <WeightBar t={t} />}
-      {weighted && unverified(t) && <UnverifiedNote website={website} />}
       <RichText text={t.requirements} />
       {!hideSource && (
         <Source url={t.source_url} verified={t.verified_on} website={website} />
       )}
     </article>
-  );
-}
-
-// A track published before its source and check date were filled in.
-const unverified = (t: Track) => !String(t.source_url || "").trim() || !t.verified_on;
-function UnverifiedNote({ website }: { website?: string }) {
-  // Calm, factual reminder: weights come from the admission guides and can
-  // change from year to year. No alarm box, no "not reviewed" wording.
-  return (
-    <p className="muted small weights-note">
-      الأوزان من أدلة القبول، والجامعات ممكن تحدّثها كل سنة. تقدر تتأكد من آخر تحديث في{" "}
-      {website ? (
-        <a href={website} target="_blank" rel="noopener noreferrer">
-          موقع الجامعة
-        </a>
-      ) : (
-        "موقع الجامعة"
-      )}
-      .
-    </p>
   );
 }
 

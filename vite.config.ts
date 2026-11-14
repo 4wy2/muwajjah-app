@@ -63,8 +63,10 @@ function launchSwitch(): Plugin {
           .replace(/(<meta\s+name="description"\s+content=")[^"]*"/, "$1" + desc + '"')
           .replace(/(<meta\s+property="og:description"\s+content=")[^"]*"/, "$1" + desc + '"')
           .replace('<meta property="og:type" content="website" />', '<meta property="og:type" content="website" />\n    <meta property="og:url" content="' + url + '" />');
-        mkdirSync(join(out, "universities", id), { recursive: true });
-        writeFileSync(join(out, "universities", id, "index.html"), html);
+        // universities/<id>.html: Netlify serves it for /universities/<id>
+        // as is (a folder with index.html would add a redirect to "<id>/").
+        mkdirSync(join(out, "universities"), { recursive: true });
+        writeFileSync(join(out, "universities", id + ".html"), html);
       }
     },
   };

@@ -2778,5 +2778,3 @@ h1, h2, h3 { text-wrap: balance; }
 .calc-actions .score-output { flex: 1 1 100%; margin: 4px 0 0; padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 4px; }
 .calc-actions .score-output .score-parts { margin: 0; font-size: 13px; color: var(--muted); }
 .score-group-head .btn { white-space: nowrap; }
-.weights-note { margin: 8px 0 0; }
-.weights-note a { color: inherit; text-decoration: underline; }
