@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { CONTACT_EMAIL } from "../lib/config";
 import { useOffer } from "../api/commerce";
-import { date } from "../lib/utils";
 
 // Terms of use describing how the site actually works. The upgrade section
 // shows only while upgrades are on, and states what is already decided (one
@@ -64,7 +63,7 @@ export default function Terms() {
           <ul>
             <li>
               الترقية دفعة وحدة{offer.price_text ? " بقيمة " + offer.price_text : ""}، وتبقى
-              {offer.season_ends_at ? " لين " + date(offer.season_ends_at) : " للموسم كامل"}، بدون تجديد تلقائي.
+              {" للموسم كامل"}، بدون تجديد تلقائي.
             </li>
             <li>تنفتح المزايا على الحساب اللي بريده نفس البريد المستخدم في الدفع.</li>
             <li>المعلومات الأساسية عن الجامعات تبقى مجانية للجميع.</li>

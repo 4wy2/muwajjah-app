@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 // rights, contact and complaints) without naming providers. Every line must
 // stay true: Google sign-in only, own-rows-only access, storage with a cloud
 // provider outside the Kingdom, payment by the store, aggregate analytics.
-const UPDATED = "13 نوفمبر 2026";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -34,7 +33,6 @@ export default function Privacy() {
   return (
     <article className="profile prose-page">
       <h1>سياسة الخصوصية</h1>
-      <p className="muted">آخر تحديث: {UPDATED}</p>
       <p>
         خصوصيتك تهمنا في {ENTITY_NAME}. نجمع أقل ما نحتاجه لخدمتك، وبياناتك تبقى لك.
       </p>
@@ -75,7 +73,7 @@ export default function Privacy() {
         </Section>
       )}
 
-      <p className="muted">قد نحدّث هذه السياسة عند الحاجة، ونوضح تاريخ آخر تحديث أعلى الصفحة.</p>
+      <p className="muted">قد نحدّث هذه السياسة عند الحاجة.</p>
       <p>
         <Link to="/">العودة لدليل الجامعات</Link>
       </p>

@@ -40,7 +40,7 @@ import {
 } from "../components/ui";
 import UniversityCard, { FavoriteButton } from "../components/UniversityCard";
 import type { Program } from "../lib/types";
-import { date, friendly } from "../lib/utils";
+import { friendly } from "../lib/utils";
 export default function Student() {
   const commercial = useCommercialVisible();
   const saving = useSaving().state;
@@ -303,7 +303,6 @@ function ScoresView() {
                     <th>القدرات</th>
                     <th>التحصيلي</th>
                     <th>الموزونة</th>
-                    <th>التاريخ</th>
                     <th>
                       <span className="sr-only">حذف</span>
                     </th>
@@ -319,7 +318,6 @@ function ScoresView() {
                       <td className="accent cell-full" data-label="الموزونة">
                         <b>{s.result}%</b>
                       </td>
-                      <td data-label="التاريخ">{date(s.created_at)}</td>
                       <td className="cell-actions">
                         <button
                           className="icon-btn"

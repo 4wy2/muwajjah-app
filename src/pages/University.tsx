@@ -48,7 +48,6 @@ import {
 } from "../components/ui";
 import {
   calculate,
-  date,
   housing,
   safeUrl,
   friendly,
@@ -88,7 +87,7 @@ export function Source({
           {own ? "موقع الجامعة" : "المصدر"} <ExternalLink size={12} />
         </a>
       )}
-      {verified && <small>رُوجع في {date(verified)}</small>}
+      {verified && !href && <small>رُوجع على المصدر الرسمي</small>}
     </div>
   );
 }

@@ -26,7 +26,6 @@ import {
 } from "../api/student";
 import { useUpgradeSheet } from "../lib/store";
 import { Loading, ErrorState } from "../components/ui";
-import { date } from "../lib/utils";
 
 // Benefits in the student's words, with where to use each once unlocked.
 // Only features the owner actually placed behind the upgrade are shown.
@@ -143,7 +142,7 @@ const FAQ: [string, string][] = [
 function useOfferInfo() {
   const offer = useOffer();
   const o = offer.data;
-  const term = o?.season_ends_at ? "لين " + date(o.season_ends_at) : "للموسم كامل";
+  const term = "للموسم كامل";
   return { offer, o, term };
 }
 
@@ -288,7 +287,7 @@ export function UpgradeView() {
             <Sparkles size={15} aria-hidden="true" /> حسابك مُرقّى
           </span>
           <h1>كل الأدوات مفتوحة لك</h1>
-          <p className="muted">حتى {date(plus.data.expires_at)}.</p>
+          <p className="muted">ترقيتك مفعّلة لهذا الموسم.</p>
         </header>
         <ul className="up-features">
           {benefits.map((b) => (
