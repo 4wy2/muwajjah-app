@@ -118,9 +118,10 @@ function launchSwitch(): Plugin {
     // Link previews and search engines: WhatsApp, Telegram and Google's first
     // pass do not run the app, so each university gets its own copy of
     // index.html with a title, description, canonical link and structured data.
-    // With PUBLIC=1 the page also carries the university's content as plain
-    // HTML (the app replaces it once it loads). Leave PUBLIC unset while the
-    // site is private, so nothing is readable before launch.
+    // The page also carries the university's content as plain HTML (the app
+    // replaces it once it loads). While the site is private the app adds
+    // "noindex", so search engines keep out until the owner opens the site.
+    // PUBLIC=0 leaves the content out.
     // Netlify serves universities/<id>.html for /universities/<id> first.
     writeBundle(options) {
       if (!launch) return;
@@ -130,7 +131,7 @@ function launchSwitch(): Plugin {
       const logos = new Set(
         existsSync(join(out, "logos")) ? readdirSync(join(out, "logos")).map((f) => f.replace(/\.png$/, "")) : [],
       );
-      const pub = process.env.PUBLIC === "1";
+      const pub = process.env.PUBLIC !== "0";
       mkdirSync(join(out, "universities"), { recursive: true });
       for (const [id, u] of Object.entries(data)) {
         const url = siteUrl + "universities/" + id;
@@ -163,7 +164,7 @@ function launchSwitch(): Plugin {
         writeFileSync(join(out, "universities", id + ".html"), html);
       }
       // The home page lists every university as plain links, so a crawler
-      // finds them without running the app.
+      // finds them without running the app (PUBLIC=0 leaves them out).
       if (pub) {
         const list = Object.entries(data)
           .map(([id, u]) => '<li><a href="' + siteUrl + "universities/" + id + '">' + esc(u.name) + "</a>" + (u.city ? " — " + esc(u.city) : "") + "</li>")
