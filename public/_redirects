@@ -1,1 +1,16 @@
-/* /index.html 200
+# App routes are served by index.html. Any other address answers 404, so
+# search engines do not index empty pages (existing files are served first).
+/admin/*        /index.html  200
+/admin          /index.html  200
+/student/*      /index.html  200
+/student        /index.html  200
+/auth/*         /index.html  200
+/compare        /index.html  200
+/upgrade        /index.html  200
+/privacy        /index.html  200
+/terms          /index.html  200
+/details.html   /index.html  200
+/account.html   /index.html  200
+/compare.html   /index.html  200
+/admin.html     /index.html  200
+/*              /index.html  404

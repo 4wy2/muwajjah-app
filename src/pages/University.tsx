@@ -1,3 +1,4 @@
+import NoIndex from "../components/NoIndex";
 import { usePreferences } from "../lib/store";
 import { useUpgradeSheet } from "../lib/store";
 import { track } from "../lib/analytics";
@@ -663,6 +664,7 @@ export default function University() {
   if (!u.data)
     return (
       <Empty title="الجامعة غير موجودة أو غير منشورة">
+        <NoIndex />
         <Link to="/">العودة للدليل</Link>
       </Empty>
     );

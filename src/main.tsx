@@ -1,3 +1,4 @@
+import NoIndex from "./components/NoIndex";
 import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -130,6 +131,7 @@ function App() {
                       path="*"
                       element={
                         <Empty title="الصفحة غير موجودة">
+                          <NoIndex />
                           <a href={BASE + "/"}>العودة للرئيسية</a>
                         </Empty>
                       }

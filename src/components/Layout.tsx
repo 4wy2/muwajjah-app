@@ -157,6 +157,18 @@ export default function Layout() {
   // Team-only mode: visitors outside the team see only the brand and sign-in.
   const sitePrivate = useSitePrivate();
   const gated = sitePrivate.data !== false && !member.data?.is_enabled;
+  // One canonical address per page (no query or hash), so search engines do
+  // not count the same page twice.
+  useEffect(() => {
+    let link = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "canonical";
+      document.head.appendChild(link);
+    }
+    const path = location.pathname.replace(/\/+$/, "") || "/";
+    link.href = window.location.origin + path;
+  }, [location.pathname]);
   // While private, ask search engines not to index anything.
   useEffect(() => {
     if (!sitePrivate.data) return;
